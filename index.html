@@ -6,17 +6,26 @@
       name="viewport"
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Wordle" />
+    <meta name="theme-color" content="#121213" />
+    <link rel="apple-touch-icon" href="wordle-icon.png" />
     <title>Graeme vs Stephen – Wordle</title>
     <style>
       :root {
-        --bg: #fff;
-        --fg: #121213;
-        --line: #d3d6da;
-        --key: #d3d6da;
-        --keyfg: #121213;
-        --correct: #6aaa64;
-        --present: #c9b458;
-        --absent: #787c7e;
+        --bg: #121213;
+        --fg: #fff;
+        --line: #3a3a3c;
+        --key: #818384;
+        --keyfg: #fff;
+        --correct: #538d4e;
+        --present: #b59f3b;
+        --absent: #3a3a3c;
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -267,6 +276,25 @@
           transform: translateY(120vh) rotate(40deg);
         }
       }
+      body {
+        padding-top: env(safe-area-inset-top);
+        overscroll-behavior: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      button,
+      .k {
+        touch-action: manipulation;
+      }
+      #setbox input {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      #setbox input {
+        -webkit-text-security: disc;
+      }
     </style>
   </head>
   <body>
@@ -280,7 +308,10 @@
     <div id="setbox" hidden>
       <input
         id="w"
-        type="password"
+        type="text"
+        autocapitalize="none"
+        autocorrect="off"
+        spellcheck="false"
         maxlength="5"
         placeholder="•••••"
         autocomplete="off"
@@ -516,6 +547,12 @@
         });
 
       // ---------- sound & effects ----------
+      ["touchend", "click"].forEach((e) =>
+        document.addEventListener(e, () => {
+          AC = AC || new AudioContext();
+          AC.resume();
+        }),
+      );
       function tone(f, t, d, type = "square", v = 0.18) {
         try {
           AC = AC || new AudioContext();
