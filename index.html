@@ -295,6 +295,55 @@
       #setbox input {
         -webkit-text-security: disc;
       }
+      .k {
+        font-size: min(26px, 6.6vw);
+        padding: 0;
+      }
+      .k.w {
+        font-size: 13px;
+      }
+      .k[data-k="Backspace"] {
+        font-size: 24px;
+      }
+      .k.correct {
+        background: var(--correct);
+      }
+      .k.present {
+        background: var(--present);
+      }
+      .k.absent {
+        background: var(--absent);
+      }
+      #done {
+        background: none !important;
+        justify-content: flex-end;
+        pointer-events: none;
+        padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+      }
+      #done .card {
+        pointer-events: auto;
+      }
+      #noteBox {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+      }
+      #noteShow {
+        font-style: italic;
+        max-width: 280px;
+      }
+      #noteIn {
+        -webkit-user-select: text;
+        user-select: text;
+        flex: 1;
+        min-width: 0;
+        font-size: 16px;
+        padding: 8px;
+        border: 2px solid var(--line);
+        border-radius: 6px;
+        background: var(--bg);
+        color: var(--fg);
+      }
     </style>
   </head>
   <body>
@@ -329,6 +378,16 @@
       <div class="card">
         <div class="big" id="dt"></div>
         <div id="ds"></div>
+        <div id="noteShow" hidden></div>
+        <div id="noteBox" hidden>
+          <input
+            id="noteIn"
+            maxlength="80"
+            placeholder="Leave a note…"
+            autocomplete="off"
+          />
+          <button class="go" id="noteBtn">Send</button>
+        </div>
         <button class="go" id="next">Next round</button>
       </div>
     </div>
@@ -456,8 +515,13 @@
             ? "Solved in " + gs.length + "/6"
             : "The word was " + G.word.toUpperCase();
           $("next").textContent = guesser + " sets the next word";
-          if (lastRound !== G.round) {
-            lastRound = G.round;
+          $("noteShow").hidden = !G.note;
+          $("noteShow").textContent = G.note
+            ? G.noteBy + ": “" + G.note + "”"
+            : "";
+          $("noteBox").hidden = !amG || !!G.note;
+          if (localStorage.getItem("seen") !== String(G.round)) {
+            localStorage.setItem("seen", G.round);
             setTimeout(() => (win ? celebrate() : disaster()), 1400);
           }
         }
@@ -543,9 +607,17 @@
           word: "",
           guesses: null,
           result: null,
+          note: null,
+          noteBy: null,
           round: G.round + 1,
         });
-
+      $("noteBtn").onclick = () => {
+        const t = $("noteIn").value.trim();
+        if (t) {
+          ref.update({ note: t, noteBy: me });
+          $("noteIn").value = "";
+        }
+      };
       // ---------- sound & effects ----------
       ["touchend", "click"].forEach((e) =>
         document.addEventListener(e, () => {
