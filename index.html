@@ -15,6 +15,7 @@
     <meta name="apple-mobile-web-app-title" content="Wordle" />
     <meta name="theme-color" content="#121213" />
     <link rel="apple-touch-icon" href="wordle-icon.png" />
+    <link rel="manifest" href="manifest.json" />
     <title>Graeme vs Stephen – Wordle</title>
     <style>
       :root {
@@ -353,6 +354,9 @@
       <button id="sw"></button>
     </header>
     <div id="msg"></div>
+    <button class="go" id="bell" hidden style="margin-bottom: 10px">
+      Turn on notifications
+    </button>
     <div id="board"></div>
     <div id="setbox" hidden>
       <input
@@ -394,6 +398,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
     <script>
       // ===== PASTE YOUR FIREBASE CONFIG HERE =====
 
@@ -449,6 +454,8 @@
       function render() {
         $("pick").hidden = !!me;
         if (!me || !G) return;
+        $("bell").hidden =
+          !("Notification" in window) || Notification.permission === "granted";
         const gs = G.guesses || [],
           setter = G.setter,
           guesser = other(setter);
@@ -618,6 +625,42 @@
           $("noteIn").value = "";
         }
       };
+      const VAPID_KEY =
+        "BETPcepBUad8jOhlmNqfHMa8oydUi3PddLsX1qs8W9kc9v15KZjZSXZ6xCkCIL8RSCpexCe1As8tLEFsV7AgX_U";
+      async function enableNotifs(silent) {
+        try {
+          const perm = await Notification.requestPermission();
+          if (perm !== "granted") {
+            if (!silent)
+              alert(
+                "Notifications are blocked. Turn them on in iPhone Settings, Notifications, Wordle.",
+              );
+            return;
+          }
+          const reg = await navigator.serviceWorker.register(
+            "firebase-messaging-sw.js",
+          );
+          const token = await firebase.messaging().getToken({
+            vapidKey: VAPID_KEY,
+            serviceWorkerRegistration: reg,
+          });
+          await firebase
+            .database()
+            .ref("tokens/" + me)
+            .set(token);
+          $("bell").hidden = true;
+          if (!silent) alert("Notifications are on");
+        } catch (e) {
+          if (!silent) alert("Couldn't turn on notifications: " + e.message);
+        }
+      }
+      $("bell").onclick = () => enableNotifs(false);
+      if (
+        me &&
+        "Notification" in window &&
+        Notification.permission === "granted"
+      )
+        enableNotifs(true);
       // ---------- sound & effects ----------
       ["touchend", "click"].forEach((e) =>
         document.addEventListener(e, () => {
