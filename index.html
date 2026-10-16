@@ -419,8 +419,11 @@
       const other = (p) => (p === "Graeme" ? "Stephen" : "Graeme");
       let WORDS = null;
       fetch("words.txt")
-        .then((r) => r.text())
-        .then((t) => (WORDS = new Set(t.split("\n").map((w) => w.trim()))))
+        .then((r) => (r.ok ? r.text() : ""))
+        .then((t) => {
+          const list = t.split(/\s+/).filter((w) => /^[a-z]{5}$/.test(w));
+          if (list.length > 1000) WORDS = new Set(list);
+        })
         .catch(() => {});
       let me = localStorage.getItem("me"),
         G = null,
