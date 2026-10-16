@@ -417,6 +417,11 @@
       const ref = firebase.database().ref("wordle");
       const $ = (id) => document.getElementById(id);
       const other = (p) => (p === "Graeme" ? "Stephen" : "Graeme");
+      let WORDS = null;
+      fetch("words.txt")
+        .then((r) => r.text())
+        .then((t) => (WORDS = new Set(t.split("\n").map((w) => w.trim()))))
+        .catch(() => {});
       let me = localStorage.getItem("me"),
         G = null,
         cur = "",
@@ -599,6 +604,11 @@
 
       function submit() {
         if (cur.length < 5) return;
+        if (WORDS && !WORDS.has(cur)) {
+          $("msg").textContent = "Not in word list";
+          setTimeout(render, 1500);
+          return;
+        }
         const gs = [...(G.guesses || []), cur],
           win = cur === G.word,
           over = win || gs.length === 6;
@@ -636,6 +646,8 @@
         const w = $("w").value.trim().toLowerCase();
         if (!/^[a-z]{5}$/.test(w))
           return alert("Enter exactly 5 letters (A–Z).");
+        if (WORDS && !WORDS.has(w))
+          return alert("That's not a real word Numdnuts!!");
         $("w").value = "";
         ref.update({
           word: w,
