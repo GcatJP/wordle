@@ -450,8 +450,37 @@
           }
         return r;
       }
-
+      let recapOn = false;
       function render() {
+        $("pick").hidden = !!me;
+        if (!me || !G) return;
+        const R =
+          G.last &&
+          me === G.last.setter &&
+          localStorage.getItem("seen") !== String(G.last.round)
+            ? G.last
+            : null;
+        recapOn = !!R;
+        $("done").style.pointerEvents = R ? "auto" : "";
+        draw(
+          R
+            ? {
+                ...G,
+                ...R,
+                note: R.note || null,
+                noteBy: R.noteBy || null,
+                status: "done",
+              }
+            : G,
+          !!R,
+        );
+      }
+      $("done").addEventListener("click", () => {
+        if (!recapOn) return;
+        localStorage.setItem("seen", String(G.last.round));
+        render();
+      });
+      function draw(G, recap) {
         $("pick").hidden = !!me;
         if (!me || !G) return;
         $("bell").hidden =
@@ -518,16 +547,24 @@
           $("dt").textContent = win
             ? guesser + " is great!"
             : guesser + " is a Loser";
-          $("ds").textContent = win
-            ? "Solved in " + gs.length + "/6"
-            : "The word was " + G.word.toUpperCase();
+          $("ds").textContent =
+            (win
+              ? "Solved in " + gs.length + "/6"
+              : "The word was " + G.word.toUpperCase()) +
+            (recap ? " · tap anywhere to continue" : "");
           $("next").textContent = guesser + " sets the next word";
+          $("next").hidden = recap;
           $("noteShow").hidden = !G.note;
           $("noteShow").textContent = G.note
             ? G.noteBy + ": “" + G.note + "”"
             : "";
           $("noteBox").hidden = !amG || !!G.note;
-          if (localStorage.getItem("seen") !== String(G.round)) {
+          if (recap) {
+            if (lastRound !== G.round) {
+              lastRound = G.round;
+              setTimeout(() => (win ? celebrate() : disaster()), 1400);
+            }
+          } else if (localStorage.getItem("seen") !== String(G.round)) {
             localStorage.setItem("seen", G.round);
             setTimeout(() => (win ? celebrate() : disaster()), 1400);
           }
@@ -616,6 +653,15 @@
           result: null,
           note: null,
           noteBy: null,
+          last: {
+            setter: G.setter,
+            word: G.word,
+            guesses: G.guesses || [],
+            result: G.result,
+            note: G.note || null,
+            noteBy: G.noteBy || null,
+            round: G.round,
+          },
           round: G.round + 1,
         });
       $("noteBtn").onclick = () => {
