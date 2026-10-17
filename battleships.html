@@ -380,6 +380,54 @@
         margin-top: 6px;
         text-align: center;
       }
+      .banner {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(5, 15, 25, 0.72);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .banner span {
+        padding: 0 24px;
+        font-size: 2.8rem;
+        font-weight: 900;
+        line-height: 1.1;
+        text-align: center;
+        color: var(--brass);
+        text-shadow: 0 4px 18px rgba(0, 0, 0, 0.9);
+      }
+      .banner.show {
+        animation: bannerLife 4s ease forwards;
+      }
+      .banner.show span {
+        animation: bannerPop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1);
+      }
+      @keyframes bannerLife {
+        0% {
+          opacity: 0;
+        }
+        8% {
+          opacity: 1;
+        }
+        88% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+      @keyframes bannerPop {
+        0% {
+          transform: scale(0.4) rotate(-6deg);
+        }
+        100% {
+          transform: scale(1) rotate(0);
+        }
+      }
     </style>
   </head>
   <body>
@@ -473,7 +521,7 @@
         <button class="btn" id="newGameBtn">New game</button>
       </div>
     </div>
-
+    <div class="banner" id="banner"><span>It's on bitch!</span></div>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <script>
@@ -592,15 +640,22 @@
           data = snap.val() || {};
           var p = phaseOf(data);
           if (p !== phase) {
+            var prev = phase;
             phase = p;
-            enterPhase(p);
+            enterPhase(p, prev);
           } else if (p === "play") {
             renderPlay();
           }
         });
       }
 
-      function enterPhase(p) {
+      function showBanner() {
+        var b = $("banner");
+        b.classList.remove("show");
+        void b.offsetWidth;
+        b.classList.add("show");
+      }
+      function enterPhase(p, prev) {
         if (p === "place") {
           resetPlacement();
           show("s-place");
@@ -618,6 +673,7 @@
           $("msg").textContent = "Tap a square to fire!";
           renderPlay();
           show("s-play");
+          if (prev === "place" || prev === "waitships") showBanner();
         }
         if (p === "waitfinish") {
           $("waitFinishText").textContent = WAIT_TEXT.replace("{N}", cap(opp));

@@ -443,7 +443,7 @@
       const $ = (id) => document.getElementById(id);
       const other = (p) => (p === "Graeme" ? "Stephen" : "Graeme");
       let WORDS = null;
-      fetch("words.txt")
+      fetch("words.txt", { cache: "no-store" })
         .then((r) => (r.ok ? r.text() : ""))
         .then((t) => {
           const list = t.split(/\s+/).filter((w) => /^[a-z]{5}$/.test(w));
@@ -640,7 +640,12 @@
       function submit() {
         const guess = cur.join("");
         if (guess.length < 5) return;
-        if (WORDS && !WORDS.has(guess)) {
+        if (!WORDS) {
+          $("msg").textContent = "Word list still loading…";
+          setTimeout(render, 1500);
+          return;
+        }
+        if (!WORDS.has(guess)) {
           $("msg").textContent = "Not in word list";
           setTimeout(render, 1500);
           return;
@@ -689,8 +694,11 @@
         const w = $("w").value.trim().toLowerCase();
         if (!/^[a-z]{5}$/.test(w))
           return alert("Enter exactly 5 letters (A–Z).");
-        if (WORDS && !WORDS.has(w))
-          return alert("That's not a real word Numdnuts!!");
+        if (!WORDS)
+          return alert(
+            "Word list hasn't loaded yet. Check your connection and try again.",
+          );
+        if (!WORDS.has(w)) return alert("That's not a real word Numdnuts!!");
         $("w").value = "";
         ref.update({
           word: w,
