@@ -83,7 +83,7 @@
       }
       h1 {
         margin: 0 0 18px;
-        font-size: 2.4rem;
+        font-size: 3rem;
         line-height: 1.05;
         font-weight: 900;
         text-align: center;
@@ -119,7 +119,10 @@
         display: flex;
         align-items: center;
         gap: 16px;
-        padding: 18px 20px;
+        padding: 0 20px;
+        min-height: 160px;
+        position: relative;
+        overflow: hidden;
         font: inherit;
         font-size: 1.35rem;
         font-weight: 800;
@@ -167,33 +170,137 @@
         margin-top: 2px;
       }
 
-      /* Mini tile icon (Wordle) */
-      .mini-tiles {
-        display: flex;
-        gap: 4px;
+      /* Wordle button tiles */
+      .menu-btn.wordle {
+        justify-content: center;
       }
-      .mini-tiles span {
-        width: 22px;
-        height: 22px;
-        border-radius: 4px;
-        font-size: 0.8rem;
-        font-weight: 900;
+      .word-tiles {
+        display: flex;
+        gap: 5px;
+        width: 100%;
+        perspective: 600px;
+      }
+      .word-tiles span {
+        flex: 1;
+        aspect-ratio: 1;
         display: grid;
         place-items: center;
+        font-size: 1.5rem;
+        font-weight: 900;
+        border-radius: 6px;
         background: #3a3a3c;
       }
-      .mini-tiles .g {
+      .word-tiles .g {
         background: #538d4e;
       }
-      .mini-tiles .y {
+      .word-tiles .y {
         background: #b59f3b;
       }
-
-      /* Mini grid icon (Battleships) */
-      .mini-grid {
-        width: 62px;
-        height: 62px;
-        flex: none;
+      /* Occasional flip wave, same colours and letters */
+      .ready .word-tiles span {
+        animation: tileFlip 4s ease-in-out infinite;
+      }
+      .ready .word-tiles span:nth-child(1) {
+        animation-delay: 2s;
+      }
+      .ready .word-tiles span:nth-child(2) {
+        animation-delay: 2.15s;
+      }
+      .ready .word-tiles span:nth-child(3) {
+        animation-delay: 2.3s;
+      }
+      .ready .word-tiles span:nth-child(4) {
+        animation-delay: 2.45s;
+      }
+      .ready .word-tiles span:nth-child(5) {
+        animation-delay: 2.6s;
+      }
+      .ready .word-tiles span:nth-child(6) {
+        animation-delay: 2.75s;
+      }
+      @keyframes tileFlip {
+        0% {
+          transform: rotateX(0);
+        }
+        5% {
+          transform: rotateX(90deg);
+        }
+        10% {
+          transform: rotateX(0);
+        }
+        100% {
+          transform: rotateX(0);
+        }
+      }
+      /* Battleships button */
+      .menu-btn.battle {
+        justify-content: center;
+      }
+      .battle-title {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        text-align: center;
+        font-size: 2.8rem;
+        font-weight: 900;
+        letter-spacing: 0.5px;
+        text-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+      }
+      .cannon {
+        position: absolute;
+        left: 10px;
+        bottom: 8px;
+        width: 100px;
+        height: 70px;
+        z-index: 1;
+      }
+      .ball {
+        position: absolute;
+        z-index: 3;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #8a8a8a, #1a1a1a 70%);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        left: 84px;
+        top: 90px;
+        animation:
+          ballX 3s linear infinite,
+          ballY 3s infinite;
+      }
+      @keyframes ballX {
+        0% {
+          left: 84px;
+          opacity: 1;
+        }
+        70% {
+          left: calc(100% - 36px);
+          opacity: 1;
+        }
+        71% {
+          left: calc(100% - 36px);
+          opacity: 0;
+        }
+        100% {
+          left: 84px;
+          opacity: 0;
+        }
+      }
+      @keyframes ballY {
+        0% {
+          top: 90px;
+          animation-timing-function: ease-out;
+        }
+        35% {
+          top: 25px;
+          animation-timing-function: ease-in;
+        }
+        70% {
+          top: 125px;
+        }
+        100% {
+          top: 125px;
+        }
       }
 
       /* ---------- Loading screen ---------- */
@@ -302,28 +409,34 @@
     <div class="bg"></div>
 
     <div class="menu" id="menu">
-      <h1>Stephen<br />is a dick</h1>
+      <h1>Stephen<br />is a dick!</h1>
 
       <a class="menu-btn wordle" href="wordle.html">
-        <div class="mini-tiles">
-          <span class="g">W</span><span class="y">O</span><span>R</span>
+        <div class="word-tiles">
+          <span class="g">W</span><span class="y">O</span><span>R</span
+          ><span class="g">D</span><span class="y">L</span><span>E</span>
         </div>
-        <div>Wordle<small>Word vs word</small></div>
       </a>
 
       <a class="menu-btn battle" href="battleships.html">
-        <svg class="mini-grid" viewBox="0 0 62 62">
-          <rect width="62" height="62" rx="8" fill="#0b2a52" />
-          <g stroke="#4f86c6" stroke-width="1" opacity=".6">
-            <path
-              d="M15.5 0v62M31 0v62M46.5 0v62M0 15.5h62M0 31h62M0 46.5h62"
-            />
+        <svg class="cannon" viewBox="0 0 100 70">
+          <g transform="rotate(-30 40 40)">
+            <rect x="30" y="32" width="55" height="16" rx="6" fill="#4a4a4f" />
+            <rect x="78" y="29" width="10" height="22" rx="3" fill="#2e2e32" />
           </g>
-          <rect x="6" y="20" width="34" height="9" rx="4.5" fill="#9aa5b1" />
-          <circle cx="47" cy="40" r="6" fill="#e74c3c" />
-          <circle cx="20" cy="50" r="4" fill="#fff" opacity=".85" />
+          <rect x="14" y="52" width="46" height="8" rx="3" fill="#6b4a2b" />
+          <circle
+            cx="38"
+            cy="54"
+            r="13"
+            fill="#8a5a2b"
+            stroke="#4d3118"
+            stroke-width="3"
+          />
+          <circle cx="38" cy="54" r="4" fill="#4d3118" />
         </svg>
-        <div>Battleships<small>Sink their fleet</small></div>
+        <div class="battle-title">Battleships</div>
+        <span class="ball"></span>
       </a>
     </div>
 
