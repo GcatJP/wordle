@@ -261,54 +261,61 @@
       .ball {
         position: absolute;
         z-index: 2;
+        left: 80px;
+        top: 89px;
+        width: 16px;
+        height: 16px;
+        opacity: 0;
+        will-change: transform, opacity;
+        animation: ballX 3s linear infinite;
+      }
+      .ball::after {
+        content: "";
+        display: block;
         width: 16px;
         height: 16px;
         border-radius: 50%;
         background: radial-gradient(circle at 35% 35%, #8a8a8a, #1a1a1a 70%);
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-        left: 80px;
-        top: 89px;
-        opacity: 0;
-        animation:
-          ballX 3s linear infinite,
-          ballY 3s infinite;
+        will-change: transform;
+        animation: ballY 3s infinite;
       }
       @keyframes ballX {
         0% {
-          left: 80px;
+          transform: translateX(0);
           opacity: 0;
         }
         3% {
-          left: 80px;
+          transform: translateX(0);
           opacity: 1;
         }
         70% {
-          left: calc(100% - 36px);
+          transform: translateX(204px);
           opacity: 1;
         }
         71% {
-          left: calc(100% - 36px);
+          transform: translateX(204px);
           opacity: 0;
         }
         100% {
-          left: 80px;
+          transform: translateX(0);
           opacity: 0;
         }
       }
       @keyframes ballY {
         0% {
-          top: 89px;
+          transform: translateY(0);
           animation-timing-function: ease-out;
         }
         35% {
-          top: 25px;
+          transform: translateY(-64px);
           animation-timing-function: ease-in;
         }
         70% {
-          top: 125px;
+          transform: translateY(36px);
         }
         100% {
-          top: 125px;
+          transform: translateY(36px);
         }
       }
       /* ---------- Loading screen ---------- */
