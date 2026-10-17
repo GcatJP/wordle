@@ -1,0 +1,985 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Battleships</title>
+
+    <link rel="apple-touch-icon" href="homeicon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Battleships" />
+    <meta name="theme-color" content="#0b1d2e" />
+
+    <style>
+      :root {
+        --brass: #d4a94f;
+        --brass-dim: rgba(212, 169, 79, 0.55);
+        --navy: rgba(9, 26, 41, 0.84);
+        --sea: rgba(26, 78, 118, 0.78);
+        --steel-hi: #b4bfc9;
+        --steel-lo: #6c7885;
+        --fire: #e8501b;
+        --paper: #f1e6c8;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #0b1d2e;
+        color: var(--paper);
+        font-family: "American Typewriter", Georgia, serif;
+        touch-action: manipulation;
+      }
+
+      /* ---------- Background ---------- */
+      .bg {
+        position: fixed;
+        inset: 0;
+        background:
+          url("battleback.png") center / cover no-repeat,
+          #0b1d2e;
+      }
+      .bg::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to bottom,
+          rgba(5, 15, 25, 0.55),
+          rgba(5, 15, 25, 0.35) 40%,
+          rgba(5, 15, 25, 0.7)
+        );
+      }
+
+      #app {
+        position: relative;
+        z-index: 1;
+        max-width: 460px;
+        margin: 0 auto;
+        padding: calc(env(safe-area-inset-top) + 10px) 12px
+          calc(env(safe-area-inset-bottom) + 24px);
+      }
+
+      /* ---------- Top bar ---------- */
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        font-size: 0.85rem;
+      }
+      .topbar a,
+      .topbar button {
+        color: var(--paper);
+        background: rgba(9, 26, 41, 0.7);
+        border: 1px solid var(--brass-dim);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font: inherit;
+        text-decoration: none;
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+        font-weight: 900;
+        color: var(--brass);
+        text-shadow: 0 3px 10px rgba(0, 0, 0, 0.7);
+      }
+      h1 {
+        font-size: 2rem;
+        text-align: center;
+        margin-bottom: 10px;
+        letter-spacing: 1px;
+      }
+      h2 {
+        font-size: 1.15rem;
+        margin-bottom: 8px;
+      }
+      p {
+        margin: 0 0 10px;
+        line-height: 1.35;
+      }
+
+      /* ---------- Panels ---------- */
+      .panel {
+        background: var(--navy);
+        border: 2px solid var(--brass);
+        border-radius: 14px;
+        padding: 14px;
+        margin-bottom: 12px;
+        box-shadow:
+          inset 0 0 0 3px rgba(9, 26, 41, 0.9),
+          inset 0 0 0 4px var(--brass-dim),
+          0 10px 30px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+      }
+
+      .screen {
+        display: none;
+      }
+      .screen.on {
+        display: block;
+      }
+
+      /* ---------- Buttons ---------- */
+      .btn {
+        display: block;
+        width: 100%;
+        padding: 14px;
+        margin-top: 10px;
+        font: inherit;
+        font-size: 1.05rem;
+        font-weight: 900;
+        color: #1b1204;
+        background: linear-gradient(#f0cd7c, #c0923a);
+        border: 2px solid #7a5a1c;
+        border-radius: 12px;
+        box-shadow:
+          0 4px 0 #5b4210,
+          0 8px 16px rgba(0, 0, 0, 0.4);
+      }
+      .btn:active {
+        transform: translateY(3px);
+        box-shadow: 0 1px 0 #5b4210;
+      }
+      .btn.secondary {
+        color: var(--paper);
+        background: rgba(9, 26, 41, 0.6);
+        border: 2px solid var(--brass-dim);
+        box-shadow: none;
+      }
+      .btn:disabled {
+        opacity: 0.4;
+      }
+      .btn-row {
+        display: flex;
+        gap: 8px;
+      }
+      .btn-row .btn {
+        margin-top: 10px;
+      }
+
+      /* ---------- Grid ---------- */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(10, minmax(0, 1fr));
+        gap: 2px;
+        padding: 3px;
+        background: var(--brass-dim);
+        border-radius: 8px;
+      }
+      .cell {
+        aspect-ratio: 1;
+        position: relative;
+        background: var(--sea);
+        border-radius: 2px;
+      }
+      .cell.ship {
+        background: linear-gradient(145deg, var(--steel-hi), var(--steel-lo));
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+      }
+      .cell.miss::after {
+        content: "";
+        position: absolute;
+        inset: 33%;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.85);
+      }
+      .cell.hit {
+        background: radial-gradient(
+          circle,
+          #ffd25a 0%,
+          var(--fire) 55%,
+          #6e1708 100%
+        );
+      }
+      .cell.hit.sunk {
+        background: radial-gradient(
+          circle,
+          #8a8a8a 0%,
+          #3b2a26 60%,
+          #1a0d0a 100%
+        );
+      }
+      .cell.hit.sunk::after {
+        content: "";
+        position: absolute;
+        inset: 30%;
+        background: rgba(232, 80, 27, 0.8);
+        border-radius: 50%;
+        filter: blur(1px);
+      }
+      .grid.tap .cell:not(.hit):not(.miss):active {
+        filter: brightness(1.6);
+      }
+      .cell.fresh {
+        animation: pop 0.45s ease-out;
+      }
+      @keyframes pop {
+        0% {
+          transform: scale(1.7);
+          z-index: 2;
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      .grid.shake {
+        animation: shake 0.4s;
+      }
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-6px);
+        }
+        75% {
+          transform: translateX(6px);
+        }
+      }
+
+      /* ---------- Fleet tray (placement) ---------- */
+      .tray {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .chip {
+        flex: 1 1 30%;
+        padding: 8px 6px;
+        font: inherit;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--paper);
+        background: rgba(9, 26, 41, 0.7);
+        border: 2px solid var(--brass-dim);
+        border-radius: 10px;
+        text-align: center;
+      }
+      .chip.sel {
+        border-color: var(--brass);
+        background: rgba(212, 169, 79, 0.25);
+      }
+      .chip.done {
+        opacity: 0.55;
+      }
+      .chip.done::after {
+        content: " ✓";
+      }
+      .pips {
+        display: flex;
+        justify-content: center;
+        gap: 2px;
+        margin-top: 5px;
+      }
+      .pips i {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        background: linear-gradient(145deg, var(--steel-hi), var(--steel-lo));
+      }
+
+      /* ---------- Play ---------- */
+      .stat {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 8px;
+      }
+      .stat b {
+        font-size: 1.6rem;
+        color: var(--brass);
+      }
+      #msg {
+        min-height: 2.4em;
+        margin-top: 10px;
+        font-size: 1.25rem;
+        font-weight: 900;
+        text-align: center;
+        color: var(--paper);
+      }
+      #msg.go {
+        animation: msgIn 0.4s ease-out;
+      }
+      @keyframes msgIn {
+        0% {
+          transform: scale(0.7);
+          opacity: 0;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .fleet {
+        margin-top: 8px;
+        font-size: 0.85rem;
+      }
+      .fleet div {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+        border-bottom: 1px dashed var(--brass-dim);
+      }
+      .fleet .sunk-row {
+        text-decoration: line-through;
+        opacity: 0.6;
+      }
+
+      /* ---------- Waiting + results ---------- */
+      .big {
+        text-align: center;
+        padding: 8px 0;
+      }
+      .big .emoji {
+        font-size: 3rem;
+        display: block;
+        margin-bottom: 8px;
+        animation: bob 2s ease-in-out infinite;
+      }
+      @keyframes bob {
+        50% {
+          transform: translateY(-8px) rotate(3deg);
+        }
+      }
+      .winner {
+        text-align: center;
+        font-size: 1.7rem;
+        font-weight: 900;
+        color: var(--brass);
+        text-shadow: 0 3px 10px rgba(0, 0, 0, 0.8);
+        margin-bottom: 4px;
+      }
+      .sub {
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .legend {
+        font-size: 0.8rem;
+        opacity: 0.8;
+        margin-top: 6px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg"></div>
+
+    <div id="app">
+      <div class="topbar">
+        <a href="index.html">← Menu</a>
+        <button id="switchBtn" style="display: none"></button>
+      </div>
+
+      <!-- Connecting -->
+      <div class="screen on" id="s-loading">
+        <div class="panel big">
+          <span class="emoji">⚓</span>
+          <p>Connecting to the fleet…</p>
+        </div>
+      </div>
+
+      <!-- Who are you -->
+      <div class="screen" id="s-who">
+        <h1>BATTLESHIPS</h1>
+        <div class="panel">
+          <h2>Who's playing on this phone?</h2>
+          <button class="btn" data-who="graeme">I'm Graeme</button>
+          <button class="btn" data-who="stephen">I'm Stephen</button>
+        </div>
+      </div>
+
+      <!-- Place ships -->
+      <div class="screen" id="s-place">
+        <h1>DEPLOY YOUR FLEET</h1>
+        <div class="panel">
+          <p id="hint"></p>
+          <div class="grid tap" id="placeGrid"></div>
+          <div class="tray" id="tray"></div>
+          <div class="btn-row">
+            <button class="btn secondary" id="rotBtn">Rotate</button>
+            <button class="btn secondary" id="randBtn">Random</button>
+            <button class="btn secondary" id="clearBtn">Clear</button>
+          </div>
+          <button class="btn" id="lockBtn" disabled>Lock in fleet</button>
+        </div>
+      </div>
+
+      <!-- Waiting for opponent's ships -->
+      <div class="screen" id="s-waitships">
+        <h1>FLEET READY</h1>
+        <div class="panel big">
+          <span class="emoji">🚢</span>
+          <p id="waitShipsText"></p>
+        </div>
+      </div>
+
+      <!-- Play -->
+      <div class="screen" id="s-play">
+        <div class="panel">
+          <div class="stat">
+            <span id="targetName"></span
+            ><span>Shots <b id="shotCount">0</b></span>
+          </div>
+          <div class="grid tap" id="attackGrid"></div>
+          <div id="msg">Tap a square to fire!</div>
+          <div class="fleet" id="fleetList"></div>
+        </div>
+      </div>
+
+      <!-- Waiting for opponent to finish -->
+      <div class="screen" id="s-waitfinish">
+        <h1>YOU'RE DONE!</h1>
+        <div class="panel big">
+          <span class="emoji">⏳</span>
+          <p id="waitFinishText"></p>
+          <p id="myTriesText"></p>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="screen" id="s-results">
+        <div class="winner" id="winnerText"></div>
+        <div class="sub" id="scoreText"></div>
+        <div class="panel">
+          <h2 id="resATitle"></h2>
+          <div class="grid" id="resA"></div>
+        </div>
+        <div class="panel">
+          <h2 id="resBTitle"></h2>
+          <div class="grid" id="resB"></div>
+          <div class="legend">🔥 hit &nbsp; ⚪ miss</div>
+        </div>
+        <button class="btn" id="newGameBtn">New game</button>
+      </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script>
+      /* ============================================================
+      FIREBASE: paste the same config object that is in wordle.html
+      ============================================================ */
+
+      var firebaseConfig = {
+        apiKey: "AIzaSyBr_drU2L3wndWce7i2Pjtpepuwc_VnAzY",
+        authDomain: "wordle-d7fab.firebaseapp.com",
+        databaseURL:
+          "https://wordle-d7fab-default-rtdb.asia-southeast1.firebasedatabase.app",
+
+        projectId: "wordle-d7fab",
+        appId: "1:1048912631015:web:f389f317c49a4eeb89be42",
+      };
+      firebase.initializeApp(firebaseConfig);
+      var root = firebase.database().ref("battleships");
+
+      /* ---------- Constants ---------- */
+      var FLEET = [
+        { id: "carrier", name: "Carrier", size: 5 },
+        { id: "battleship", name: "Battleship", size: 4 },
+        { id: "cruiser", name: "Cruiser", size: 3 },
+        { id: "submarine", name: "Submarine", size: 3 },
+        { id: "destroyer", name: "Destroyer", size: 2 },
+      ];
+      var WAIT_TEXT =
+        "Let's wait for {N} to finish his game but he is much better than you so I assume you lost!";
+
+      /* ---------- Helpers ---------- */
+      function $(id) {
+        return document.getElementById(id);
+      }
+      function cap(s) {
+        return s.charAt(0).toUpperCase() + s.slice(1);
+      }
+      function toArr(x) {
+        if (!x) return [];
+        if (Array.isArray(x))
+          return x.filter(function (v) {
+            return v !== null && v !== undefined;
+          });
+        return Object.keys(x).map(function (k) {
+          return x[k];
+        });
+      }
+      function shipCells(s) {
+        var out = [];
+        for (var k = 0; k < s.size; k++)
+          out.push(s.h ? s.r * 10 + s.c + k : (s.r + k) * 10 + s.c);
+        return out;
+      }
+      function isSunk(ship, shots) {
+        return shipCells(ship).every(function (i) {
+          return shots.indexOf(i) > -1;
+        });
+      }
+      function buildGrid(el) {
+        var h = "";
+        for (var i = 0; i < 100; i++)
+          h += '<div class="cell" data-i="' + i + '"></div>';
+        el.innerHTML = h;
+      }
+      function cellsOf(el) {
+        return el.children;
+      }
+      function show(id) {
+        var all = document.querySelectorAll(".screen");
+        for (var i = 0; i < all.length; i++) all[i].classList.remove("on");
+        $(id).classList.add("on");
+        window.scrollTo(0, 0);
+      }
+
+      /* ---------- Who am I ---------- */
+      var me = localStorage.getItem("bs_me");
+      var opp = null;
+      function setPlayer(p) {
+        me = p;
+        opp = p === "graeme" ? "stephen" : "graeme";
+        localStorage.setItem("bs_me", p);
+        $("switchBtn").style.display = "";
+        $("switchBtn").textContent = "Playing as " + cap(me) + " ✎";
+      }
+
+      document.querySelectorAll("[data-who]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          setPlayer(b.getAttribute("data-who"));
+          start();
+        });
+      });
+      $("switchBtn").addEventListener("click", function () {
+        localStorage.removeItem("bs_me");
+        location.reload();
+      });
+
+      /* ---------- State ---------- */
+      var data = {};
+      var phase = null;
+      var busy = false;
+      var lastShot = -1;
+
+      function phaseOf(d) {
+        var m = d[me] || {},
+          t = d[opp] || {};
+        if (!m.ships) return "place";
+        if (!t.ships) return "waitships";
+        if (!m.done) return "play";
+        if (!t.done) return "waitfinish";
+        return "results";
+      }
+
+      function start() {
+        show("s-loading");
+        root.on("value", function (snap) {
+          data = snap.val() || {};
+          var p = phaseOf(data);
+          if (p !== phase) {
+            phase = p;
+            enterPhase(p);
+          } else if (p === "play") {
+            renderPlay();
+          }
+        });
+      }
+
+      function enterPhase(p) {
+        if (p === "place") {
+          resetPlacement();
+          show("s-place");
+        }
+        if (p === "waitships") {
+          $("waitShipsText").textContent =
+            "Your fleet is locked in. Waiting for " +
+            cap(opp) +
+            " to place his ships…";
+          show("s-waitships");
+        }
+        if (p === "play") {
+          busy = false;
+          lastShot = -1;
+          $("msg").textContent = "Tap a square to fire!";
+          renderPlay();
+          show("s-play");
+        }
+        if (p === "waitfinish") {
+          $("waitFinishText").textContent = WAIT_TEXT.replace("{N}", cap(opp));
+          $("myTriesText").textContent =
+            "You sank his fleet in " +
+            (data[me].tries || toArr(data[me].shots).length) +
+            " shots.";
+          show("s-waitfinish");
+        }
+        if (p === "results") {
+          renderResults();
+          show("s-results");
+        }
+      }
+
+      /* ============================================================
+      PLACEMENT
+      ============================================================ */
+      var placed = {};
+      var selId = null;
+      var horiz = true;
+      var pGrid = $("placeGrid");
+      buildGrid(pGrid);
+
+      function resetPlacement() {
+        placed = {};
+        selId = FLEET[0].id;
+        horiz = true;
+        renderPlacement();
+      }
+
+      function placedCells(exceptId) {
+        var set = {};
+        Object.keys(placed).forEach(function (id) {
+          if (id === exceptId) return;
+          shipCells(placed[id]).forEach(function (i) {
+            set[i] = id;
+          });
+        });
+        return set;
+      }
+      function fits(ship, r, c, h) {
+        if (h && c + ship.size > 10) return false;
+        if (!h && r + ship.size > 10) return false;
+        var taken = placedCells(ship.id);
+        var test = { size: ship.size, r: r, c: c, h: h };
+        return shipCells(test).every(function (i) {
+          return !taken[i];
+        });
+      }
+      function nextUnplaced() {
+        for (var k = 0; k < FLEET.length; k++)
+          if (!placed[FLEET[k].id]) return FLEET[k].id;
+        return null;
+      }
+
+      pGrid.addEventListener("click", function (e) {
+        var cell = e.target.closest(".cell");
+        if (!cell) return;
+        var i = +cell.getAttribute("data-i");
+        var r = Math.floor(i / 10),
+          c = i % 10;
+
+        // tapping a placed ship picks it up
+        var owner = placedCells()[i];
+        if (owner) {
+          horiz = placed[owner].h;
+          delete placed[owner];
+          selId = owner;
+          renderPlacement();
+          return;
+        }
+        if (!selId) return;
+        var ship = FLEET.filter(function (f) {
+          return f.id === selId;
+        })[0];
+        if (!fits(ship, r, c, horiz)) {
+          pGrid.classList.remove("shake");
+          void pGrid.offsetWidth;
+          pGrid.classList.add("shake");
+          return;
+        }
+        placed[selId] = {
+          id: ship.id,
+          name: ship.name,
+          size: ship.size,
+          r: r,
+          c: c,
+          h: horiz,
+        };
+        selId = nextUnplaced();
+        renderPlacement();
+      });
+
+      $("tray").addEventListener("click", function (e) {
+        var chip = e.target.closest(".chip");
+        if (!chip) return;
+        var id = chip.getAttribute("data-id");
+        if (placed[id]) {
+          horiz = placed[id].h;
+          delete placed[id];
+        }
+        selId = id;
+        renderPlacement();
+      });
+
+      $("rotBtn").addEventListener("click", function () {
+        horiz = !horiz;
+        renderPlacement();
+      });
+      $("clearBtn").addEventListener("click", function () {
+        placed = {};
+        selId = FLEET[0].id;
+        renderPlacement();
+      });
+      $("randBtn").addEventListener("click", function () {
+        placed = {};
+        FLEET.forEach(function (f) {
+          for (var tries = 0; tries < 500; tries++) {
+            var h = Math.random() < 0.5;
+            var r = Math.floor(Math.random() * (h ? 10 : 10 - f.size + 1));
+            var c = Math.floor(Math.random() * (h ? 10 - f.size + 1 : 10));
+            if (fits(f, r, c, h)) {
+              placed[f.id] = {
+                id: f.id,
+                name: f.name,
+                size: f.size,
+                r: r,
+                c: c,
+                h: h,
+              };
+              break;
+            }
+          }
+        });
+        selId = nextUnplaced();
+        renderPlacement();
+      });
+
+      $("lockBtn").addEventListener("click", function () {
+        if (Object.keys(placed).length < FLEET.length) return;
+        var arr = FLEET.map(function (f) {
+          return placed[f.id];
+        });
+        $("lockBtn").disabled = true;
+        root.child(me).set({ ships: arr });
+      });
+
+      function renderPlacement() {
+        var taken = placedCells();
+        var cells = cellsOf(pGrid);
+        for (var i = 0; i < 100; i++)
+          cells[i].className = "cell" + (taken[i] ? " ship" : "");
+
+        var tray = "";
+        FLEET.forEach(function (f) {
+          var pips = "";
+          for (var k = 0; k < f.size; k++) pips += "<i></i>";
+          tray +=
+            '<button class="chip' +
+            (selId === f.id ? " sel" : "") +
+            (placed[f.id] ? " done" : "") +
+            '" data-id="' +
+            f.id +
+            '">' +
+            f.name +
+            '<div class="pips">' +
+            pips +
+            "</div></button>";
+        });
+        $("tray").innerHTML = tray;
+
+        var sel = FLEET.filter(function (f) {
+          return f.id === selId;
+        })[0];
+        $("hint").textContent = sel
+          ? "Tap the sea to place your " +
+            sel.name +
+            " (" +
+            sel.size +
+            "). It points " +
+            (horiz ? "across →" : "down ↓") +
+            " from the square you tap. Tap a placed ship to move it."
+          : "All ships deployed. Lock in your fleet when ready!";
+        $("lockBtn").disabled = Object.keys(placed).length < FLEET.length;
+      }
+
+      /* ============================================================
+      PLAY
+      ============================================================ */
+      var aGrid = $("attackGrid");
+      buildGrid(aGrid);
+
+      function renderPlay() {
+        var m = data[me] || {},
+          t = data[opp] || {};
+        var shots = toArr(m.shots);
+        var ships = toArr(t.ships);
+
+        var shipAt = {};
+        ships.forEach(function (s) {
+          var sunk = isSunk(s, shots);
+          shipCells(s).forEach(function (i) {
+            shipAt[i] = { sunk: sunk };
+          });
+        });
+
+        var cells = cellsOf(aGrid);
+        for (var i = 0; i < 100; i++) {
+          var cls = "cell";
+          if (shots.indexOf(i) > -1) {
+            if (shipAt[i]) cls += " hit" + (shipAt[i].sunk ? " sunk" : "");
+            else cls += " miss";
+          }
+          if (i === lastShot) cls += " fresh";
+          cells[i].className = cls;
+        }
+
+        $("targetName").textContent = "Attacking " + cap(opp) + "'s fleet";
+        $("shotCount").textContent = shots.length;
+
+        var list = "";
+        ships.forEach(function (s) {
+          var sunk = isSunk(s, shots);
+          list +=
+            '<div class="' +
+            (sunk ? "sunk-row" : "") +
+            '"><span>' +
+            s.name +
+            "</span><span>" +
+            (sunk ? "Sunk 🔥" : s.size + " squares") +
+            "</span></div>";
+        });
+        $("fleetList").innerHTML = list;
+      }
+
+      function showMsg(text) {
+        var el = $("msg");
+        el.textContent = text;
+        el.classList.remove("go");
+        void el.offsetWidth;
+        el.classList.add("go");
+      }
+
+      aGrid.addEventListener("click", function (e) {
+        var cell = e.target.closest(".cell");
+        if (!cell || busy || phase !== "play") return;
+        var i = +cell.getAttribute("data-i");
+
+        var shots = toArr((data[me] || {}).shots);
+        if (shots.indexOf(i) > -1) return;
+        var ships = toArr((data[opp] || {}).ships);
+
+        shots.push(i);
+        var hitShip = null;
+        ships.forEach(function (s) {
+          if (shipCells(s).indexOf(i) > -1) hitShip = s;
+        });
+
+        var msg = "💦 Miss!";
+        if (hitShip)
+          msg = isSunk(hitShip, shots)
+            ? "🔥 You sunk the " + hitShip.name + "!"
+            : "💥 Hit!";
+
+        var allSunk = ships.every(function (s) {
+          return isSunk(s, shots);
+        });
+        lastShot = i;
+
+        if (allSunk) {
+          busy = true;
+          msg = "🏆 Fleet destroyed in " + shots.length + " shots!";
+          root.child(me).update({ shots: shots });
+          showMsg(msg);
+          setTimeout(function () {
+            root.child(me).update({ done: true, tries: shots.length });
+          }, 1800);
+        } else {
+          root.child(me).update({ shots: shots });
+          showMsg(msg);
+        }
+      });
+
+      /* ============================================================
+      RESULTS
+      ============================================================ */
+      var resA = $("resA"),
+        resB = $("resB");
+      buildGrid(resA);
+      buildGrid(resB);
+
+      function paintResult(grid, ships, shots, showShips) {
+        var shipSet = {};
+        ships.forEach(function (s) {
+          shipCells(s).forEach(function (i) {
+            shipSet[i] = true;
+          });
+        });
+        var cells = cellsOf(grid);
+        for (var i = 0; i < 100; i++) {
+          var cls = "cell";
+          var shot = shots.indexOf(i) > -1;
+          if (shot && shipSet[i]) cls += " hit";
+          else if (shot) cls += " miss";
+          else if (shipSet[i] && showShips) cls += " ship";
+          cells[i].className = cls;
+        }
+      }
+
+      function renderResults() {
+        var m = data[me],
+          t = data[opp];
+        var myShots = toArr(m.shots),
+          theirShots = toArr(t.shots);
+        var myTries = m.tries || myShots.length;
+        var theirTries = t.tries || theirShots.length;
+
+        paintResult(resA, toArr(t.ships), myShots, true);
+        paintResult(resB, toArr(m.ships), theirShots, true);
+        $("resATitle").textContent =
+          "Your shots on " + cap(opp) + "'s fleet (" + myTries + ")";
+        $("resBTitle").textContent =
+          cap(opp) + "'s shots on your fleet (" + theirTries + ")";
+
+        if (myTries < theirTries) {
+          $("winnerText").textContent = cap(me) + " is great! 🏆";
+          $("scoreText").textContent =
+            cap(opp) +
+            " is a Loser. " +
+            myTries +
+            " shots to " +
+            theirTries +
+            ".";
+        } else if (theirTries < myTries) {
+          $("winnerText").textContent = cap(opp) + " is great! 🏆";
+          $("scoreText").textContent =
+            cap(me) +
+            " is a Loser. " +
+            theirTries +
+            " shots to " +
+            myTries +
+            ".";
+        } else {
+          $("winnerText").textContent = "It's a tie! 🤝";
+          $("scoreText").textContent =
+            "Both of you needed " + myTries + " shots.";
+        }
+      }
+
+      $("newGameBtn").addEventListener("click", function () {
+        if (confirm("Start a new game? This clears both boards."))
+          root.remove();
+      });
+
+      /* ---------- Go ---------- */
+      if (me) {
+        setPlayer(me);
+        start();
+      } else {
+        show("s-who");
+      }
+    </script>
+  </body>
+</html>

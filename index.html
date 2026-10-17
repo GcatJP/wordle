@@ -248,29 +248,33 @@
       }
       .cannon {
         position: absolute;
-        left: 10px;
-        bottom: 8px;
-        width: 100px;
-        height: 70px;
-        z-index: 1;
+        left: 15px;
+        bottom: -10px;
+        width: 200px;
+        height: 100px;
+        z-index: 3;
+        object-fit: contain;
+        object-position: left bottom;
+        pointer-events: none;
+        -webkit-user-drag: none;
       }
       .ball {
         position: absolute;
-        z-index: 3;
+        z-index: 2;
         width: 16px;
         height: 16px;
         border-radius: 50%;
         background: radial-gradient(circle at 35% 35%, #8a8a8a, #1a1a1a 70%);
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
         left: 84px;
-        top: 90px;
+        top: 80px;
         animation:
           ballX 3s linear infinite,
           ballY 3s infinite;
       }
       @keyframes ballX {
         0% {
-          left: 84px;
+          left: 80px;
           opacity: 1;
         }
         70% {
@@ -288,7 +292,7 @@
       }
       @keyframes ballY {
         0% {
-          top: 90px;
+          top: 89px;
           animation-timing-function: ease-out;
         }
         35% {
@@ -419,22 +423,7 @@
       </a>
 
       <a class="menu-btn battle" href="battleships.html">
-        <svg class="cannon" viewBox="0 0 100 70">
-          <g transform="rotate(-30 40 40)">
-            <rect x="30" y="32" width="55" height="16" rx="6" fill="#4a4a4f" />
-            <rect x="78" y="29" width="10" height="22" rx="3" fill="#2e2e32" />
-          </g>
-          <rect x="14" y="52" width="46" height="8" rx="3" fill="#6b4a2b" />
-          <circle
-            cx="38"
-            cy="54"
-            r="13"
-            fill="#8a5a2b"
-            stroke="#4d3118"
-            stroke-width="3"
-          />
-          <circle cx="38" cy="54" r="4" fill="#4d3118" />
-        </svg>
+        <img class="cannon" src="cannon.png" alt="" />
         <div class="battle-title">Battleships</div>
         <span class="ball"></span>
       </a>
