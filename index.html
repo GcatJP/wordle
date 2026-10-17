@@ -1,798 +1,365 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width,initial-scale=1,viewport-fit=cover"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
+    <title>Stephen is a dick</title>
+
+    <!-- Home screen icon + full-screen app mode -->
+    <link rel="apple-touch-icon" href="homeicon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
-    <meta name="apple-mobile-web-app-title" content="Wordle" />
+    <meta name="apple-mobile-web-app-title" content="Games" />
     <meta name="theme-color" content="#121213" />
-    <link rel="apple-touch-icon" href="wordle-icon.png" />
-    <link rel="manifest" href="manifest.json" />
-    <title>Graeme vs Stephen – Wordle</title>
+
     <style>
-      :root {
-        --bg: #121213;
-        --fg: #fff;
-        --line: #3a3a3c;
-        --key: #818384;
-        --keyfg: #fff;
-        --correct: #538d4e;
-        --present: #b59f3b;
-        --absent: #3a3a3c;
-      }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg: #121213;
-          --fg: #fff;
-          --line: #3a3a3c;
-          --key: #818384;
-          --keyfg: #fff;
-          --absent: #3a3a3c;
-        }
-      }
       * {
         box-sizing: border-box;
-      }
-      html,
-      body {
-        height: 100%;
-        margin: 0;
-      }
-      body {
-        background: var(--bg);
-        color: var(--fg);
-        font-family: "Helvetica Neue", Arial, sans-serif;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        overflow-x: hidden;
-      }
-      header {
-        width: 100%;
-        max-width: 500px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px 12px;
-        border-bottom: 1px solid var(--line);
-      }
-      h1 {
-        font-family: Georgia, "Times New Roman", serif;
-        font-size: 32px;
-        margin: 0;
-        letter-spacing: 0.5px;
-      }
-      header small {
-        font-size: 13px;
-        font-weight: 700;
-        min-width: 110px;
-      }
-      header button {
-        background: none;
-        border: 0;
-        color: var(--fg);
-        font-size: 12px;
-        text-decoration: underline;
-        cursor: pointer;
-        min-width: 110px;
-        text-align: right;
-      }
-      #msg {
-        height: 44px;
-        display: flex;
-        align-items: center;
-        font-weight: 700;
-        text-align: center;
-        padding: 0 12px;
-        font-size: 15px;
-      }
-      #board {
-        display: grid;
-        grid-template-rows: repeat(6, 1fr);
-        gap: 5px;
-        margin: 6px 0 14px;
-      }
-      .row {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 5px;
-      }
-      .t {
-        width: min(62px, 15vw);
-        height: min(62px, 15vw);
-        border: 2px solid var(--line);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 30px;
-        font-weight: 700;
-        text-transform: uppercase;
-      }
-      .t.f {
-        border-color: #878a8c;
-      }
-      .t.correct,
-      .t.present,
-      .t.absent {
-        color: #fff;
-        border-color: transparent;
-      }
-      .correct {
-        background: var(--correct);
-      }
-      .present {
-        background: var(--present);
-      }
-      .absent {
-        background: var(--absent);
-      }
-      .flip {
-        animation: flip 0.5s ease both;
-      }
-      @keyframes flip {
-        50% {
-          transform: scaleY(0);
-        }
-      }
-      #kb {
-        width: 100%;
-        max-width: 500px;
-        padding: 0 6px calc(10px + env(safe-area-inset-bottom, 0px));
-      }
-      .kr {
-        display: flex;
-        justify-content: center;
-        gap: 6px;
-        margin-bottom: 8px;
-      }
-      .k {
-        flex: 1;
-        height: 56px;
-        border: 0;
-        border-radius: 4px;
-        background: var(--key);
-        color: var(--keyfg);
-        font-weight: 700;
-        font-size: 13px;
-        cursor: pointer;
-        text-transform: uppercase;
-        max-width: 44px;
-      }
-      .k.w {
-        max-width: 66px;
-        flex: 1.5;
-      }
-      .k.correct,
-      .k.present,
-      .k.absent {
-        color: #fff;
-      }
-      #setbox {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 14px;
-      }
-      #setbox input {
-        font-size: 22px;
-        letter-spacing: 6px;
-        text-transform: uppercase;
-        width: 190px;
-        padding: 8px;
-        text-align: center;
-        border: 2px solid var(--line);
-        background: var(--bg);
-        color: var(--fg);
-      }
-      button.go {
-        background: var(--fg);
-        color: var(--bg);
-        border: 0;
-        border-radius: 24px;
-        padding: 12px 22px;
-        font-weight: 700;
-        font-size: 16px;
-        cursor: pointer;
-      }
-      .ov {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 14px;
-        z-index: 10;
-        background: rgba(0, 0, 0, 0.35);
-        text-align: center;
-        padding: 20px;
-      }
-      .card {
-        background: var(--bg);
-        border-radius: 12px;
-        padding: 28px 30px;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        align-items: center;
-      }
-      .big {
-        font-family: Georgia, serif;
-        font-size: clamp(28px, 8vw, 44px);
-        font-weight: 700;
-      }
-      [hidden] {
-        display: none !important;
-      }
-      .bit {
-        position: fixed;
-        top: -40px;
-        z-index: 20;
-        pointer-events: none;
-        animation: fall linear forwards;
-      }
-      @keyframes fall {
-        to {
-          transform: translateY(115vh) rotate(720deg);
-        }
-      }
-      .shake {
-        animation: shake 0.5s 4;
-      }
-      @keyframes shake {
-        25% {
-          transform: translateX(-14px) rotate(-1deg);
-        }
-        75% {
-          transform: translateX(14px) rotate(1deg);
-        }
-      }
-      .red {
-        position: fixed;
-        inset: 0;
-        background: #d00;
-        opacity: 0;
-        z-index: 15;
-        pointer-events: none;
-        animation: red 1.2s 2;
-      }
-      @keyframes red {
-        50% {
-          opacity: 0.45;
-        }
-      }
-      .drop .t {
-        animation: drop 1.6s ease-in forwards;
-      }
-      @keyframes drop {
-        to {
-          transform: translateY(120vh) rotate(40deg);
-        }
-      }
-      body {
-        padding-top: env(safe-area-inset-top);
-        overscroll-behavior: none;
+        -webkit-tap-highlight-color: transparent;
         -webkit-user-select: none;
         user-select: none;
         -webkit-touch-callout: none;
-        -webkit-tap-highlight-color: transparent;
       }
-      button,
-      .k {
-        touch-action: manipulation;
-      }
-      #setbox input {
-        -webkit-user-select: text;
-        user-select: text;
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #121213;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "SF Pro Rounded", system-ui,
+          sans-serif;
+        color: #fff;
       }
 
-      .k {
-        font-size: min(26px, 6.6vw);
-        padding: 0;
+      /* ---------- Background ---------- */
+      .bg {
+        position: fixed;
+        inset: 0;
+        background:
+          url("back.png") center / cover no-repeat,
+          #121213;
+        transform: scale(1.08);
+        animation: drift 18s ease-in-out infinite alternate;
       }
-      .k.w {
-        font-size: 13px;
+      .bg::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0.55),
+          rgba(0, 0, 0, 0.25) 40%,
+          rgba(0, 0, 0, 0.65)
+        );
       }
-      .k[data-k="Backspace"] {
-        font-size: 24px;
+      @keyframes drift {
+        from {
+          transform: scale(1.08) translate(0, 0);
+        }
+        to {
+          transform: scale(1.14) translate(-1.5%, -1%);
+        }
       }
-      .k.correct {
-        background: var(--correct);
+
+      /* ---------- Menu ---------- */
+      .menu {
+        position: relative;
+        z-index: 1;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom);
       }
-      .k.present {
-        background: var(--present);
+      h1 {
+        margin: 0 0 18px;
+        font-size: 2.4rem;
+        line-height: 1.05;
+        font-weight: 900;
+        text-align: center;
+        letter-spacing: -0.5px;
+        text-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
+        opacity: 0;
+        transform: translateY(-20px) scale(0.9);
       }
-      .k.absent {
-        background: var(--absent);
+      .ready h1 {
+        animation:
+          titleIn 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) 0.1s forwards,
+          wobble 4s ease-in-out 0.9s infinite;
       }
-      #done {
-        background: none !important;
-        justify-content: flex-end;
-        pointer-events: none;
-        padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+      @keyframes titleIn {
+        to {
+          opacity: 1;
+          transform: none;
+        }
       }
-      #done .card {
-        pointer-events: auto;
+      @keyframes wobble {
+        0%,
+        100% {
+          transform: rotate(-1.5deg);
+        }
+        50% {
+          transform: rotate(1.5deg);
+        }
       }
-      #noteBox {
+
+      .menu-btn {
+        width: 100%;
+        max-width: 320px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 18px 20px;
+        font: inherit;
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+        opacity: 0;
+        transform: translateY(40px);
+        transition: transform 0.12s ease;
+      }
+      .menu-btn:active {
+        transform: scale(0.94) !important;
+      }
+      .menu-btn.wordle {
+        background: rgba(83, 141, 78, 0.85);
+      }
+      .menu-btn.battle {
+        background: rgba(30, 90, 170, 0.85);
+      }
+      .ready .menu-btn {
+        animation: slideUp 0.6s cubic-bezier(0.2, 1.2, 0.4, 1) forwards;
+      }
+      .ready .menu-btn.wordle {
+        animation-delay: 0.35s;
+      }
+      .ready .menu-btn.battle {
+        animation-delay: 0.5s;
+      }
+      @keyframes slideUp {
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .menu-btn small {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 600;
+        opacity: 0.8;
+        margin-top: 2px;
+      }
+
+      /* Mini tile icon (Wordle) */
+      .mini-tiles {
+        display: flex;
+        gap: 4px;
+      }
+      .mini-tiles span {
+        width: 22px;
+        height: 22px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 900;
+        display: grid;
+        place-items: center;
+        background: #3a3a3c;
+      }
+      .mini-tiles .g {
+        background: #538d4e;
+      }
+      .mini-tiles .y {
+        background: #b59f3b;
+      }
+
+      /* Mini grid icon (Battleships) */
+      .mini-grid {
+        width: 62px;
+        height: 62px;
+        flex: none;
+      }
+
+      /* ---------- Loading screen ---------- */
+      .loader {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        background: #121213;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+        transition:
+          opacity 0.5s ease,
+          visibility 0.5s;
+      }
+      .loader.hide {
+        opacity: 0;
+        visibility: hidden;
+      }
+      .loader-tiles {
         display: flex;
         gap: 8px;
-        width: 100%;
+        perspective: 600px;
       }
-      #noteShow {
-        font-style: italic;
-        max-width: 280px;
-      }
-      #noteIn {
-        -webkit-user-select: text;
-        user-select: text;
-        flex: 1;
-        min-width: 0;
-        font-size: 16px;
-        padding: 8px;
-        border: 2px solid var(--line);
+      .loader-tiles span {
+        width: 52px;
+        height: 52px;
+        display: grid;
+        place-items: center;
+        font-size: 1.8rem;
+        font-weight: 900;
+        border: 2px solid #3a3a3c;
         border-radius: 6px;
-        background: var(--bg);
-        color: var(--fg);
+        animation: flip 1.2s ease-in-out infinite;
+      }
+      .loader-tiles span:nth-child(1) {
+        animation-delay: 0s;
+      }
+      .loader-tiles span:nth-child(2) {
+        animation-delay: 0.12s;
+      }
+      .loader-tiles span:nth-child(3) {
+        animation-delay: 0.24s;
+      }
+      .loader-tiles span:nth-child(4) {
+        animation-delay: 0.36s;
+      }
+      .loader-tiles span:nth-child(5) {
+        animation-delay: 0.48s;
+      }
+      @keyframes flip {
+        0%,
+        15% {
+          transform: rotateX(0);
+          background: transparent;
+          border-color: #3a3a3c;
+        }
+        35% {
+          transform: rotateX(90deg);
+          background: transparent;
+          border-color: #3a3a3c;
+        }
+        50%,
+        85% {
+          transform: rotateX(0);
+          background: #538d4e;
+          border-color: #538d4e;
+        }
+        100% {
+          transform: rotateX(0);
+          background: transparent;
+          border-color: #3a3a3c;
+        }
+      }
+      .loader p {
+        margin: 0;
+        font-weight: 700;
+        letter-spacing: 3px;
+        font-size: 0.9rem;
+        color: #818384;
+        animation: pulse 1.2s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        50% {
+          opacity: 0.35;
+        }
+      }
+
+      /* Fade out when leaving to a game */
+      .leaving .menu {
+        opacity: 0;
+        transition: opacity 0.25s ease;
       }
     </style>
   </head>
   <body>
-    <header>
-      <small id="score"></small>
-      <h1>Wordle</h1>
-      <button id="sw"></button>
-    </header>
-    <div id="msg"></div>
-    <button class="go" id="bell" hidden style="margin-bottom: 10px">
-      Turn on notifications
-    </button>
-    <div id="board"></div>
-    <div id="setbox" hidden>
-      <input
-        id="w"
-        type="text"
-        autocapitalize="none"
-        autocorrect="off"
-        spellcheck="false"
-        maxlength="5"
-        placeholder="•••••"
-        autocomplete="off"
-      /><button class="go" id="setb">Set word</button>
-    </div>
-    <div id="kb" hidden></div>
-    <div class="ov" id="pick" hidden>
-      <div class="card">
-        <div class="big">Who are you?</div>
-        <button class="go" data-p="Graeme">Graeme</button
-        ><button class="go" data-p="Stephen">Stephen</button>
+    <div class="loader" id="loader">
+      <div class="loader-tiles">
+        <span>P</span><span>L</span><span>A</span><span>Y</span><span>!</span>
       </div>
+      <p>LOADING</p>
     </div>
-    <div class="ov" id="done" hidden style="background: rgba(0, 0, 0, 0.2)">
-      <div class="card">
-        <div class="big" id="dt"></div>
-        <div id="ds"></div>
-        <div id="noteShow" hidden></div>
-        <div id="noteBox" hidden>
-          <input
-            id="noteIn"
-            maxlength="80"
-            placeholder="Leave a note…"
-            autocomplete="off"
-          />
-          <button class="go" id="noteBtn">Send</button>
+
+    <div class="bg"></div>
+
+    <div class="menu" id="menu">
+      <h1>Stephen<br />is a dick</h1>
+
+      <a class="menu-btn wordle" href="wordle.html">
+        <div class="mini-tiles">
+          <span class="g">W</span><span class="y">O</span><span>R</span>
         </div>
-        <button class="go" id="next">Next round</button>
-      </div>
+        <div>Wordle<small>Word vs word</small></div>
+      </a>
+
+      <a class="menu-btn battle" href="battleships.html">
+        <svg class="mini-grid" viewBox="0 0 62 62">
+          <rect width="62" height="62" rx="8" fill="#0b2a52" />
+          <g stroke="#4f86c6" stroke-width="1" opacity=".6">
+            <path
+              d="M15.5 0v62M31 0v62M46.5 0v62M0 15.5h62M0 31h62M0 46.5h62"
+            />
+          </g>
+          <rect x="6" y="20" width="34" height="9" rx="4.5" fill="#9aa5b1" />
+          <circle cx="47" cy="40" r="6" fill="#e74c3c" />
+          <circle cx="20" cy="50" r="4" fill="#fff" opacity=".85" />
+        </svg>
+        <div>Battleships<small>Sink their fleet</small></div>
+      </a>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
     <script>
-      // ===== PASTE YOUR FIREBASE CONFIG HERE =====
+      var loader = document.getElementById("loader");
+      var start = Date.now();
+      var MIN_LOAD = 1400; // show the loader at least this long (ms)
 
-      const firebaseConfig = {
-        apiKey: "AIzaSyBr_drU2L3wndWce7i2Pjtpepuwc_VnAzY",
-        authDomain: "wordle-d7fab.firebaseapp.com",
-        databaseURL:
-          "https://wordle-d7fab-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "wordle-d7fab",
-        storageBucket: "wordle-d7fab.firebasestorage.app",
-        messagingSenderId: "1048912631015",
-        appId: "1:1048912631015:web:f389f317c49a4eeb89be42",
-      };
-      // ===========================================
-      firebase.initializeApp(firebaseConfig);
-      const ref = firebase.database().ref("wordle");
-      const $ = (id) => document.getElementById(id);
-      const other = (p) => (p === "Graeme" ? "Stephen" : "Graeme");
-      let WORDS = null;
-      fetch("words.txt")
-        .then((r) => (r.ok ? r.text() : ""))
-        .then((t) => {
-          const list = t.split(/\s+/).filter((w) => /^[a-z]{5}$/.test(w));
-          if (list.length > 1000) WORDS = new Set(list);
-        })
-        .catch(() => {});
-      let me = localStorage.getItem("me"),
-        G = null,
-        cur = "",
-        lastRound = -1,
-        lastLen = -1,
-        AC;
-
-      ref.on("value", (s) => {
-        G = s.val();
-        if (!G)
-          return ref.set({
-            setter: "Graeme",
-            status: "setting",
-            word: "",
-            round: 1,
-            score: { Graeme: 0, Stephen: 0 },
-          });
-        render();
-      });
-
-      function ev(g, w) {
-        const r = Array(5).fill("absent"),
-          u = {};
-        for (let i = 0; i < 5; i++)
-          if (g[i] === w[i]) r[i] = "correct";
-          else u[w[i]] = (u[w[i]] || 0) + 1;
-        for (let i = 0; i < 5; i++)
-          if (r[i] !== "correct" && u[g[i]] > 0) {
-            r[i] = "present";
-            u[g[i]]--;
-          }
-        return r;
-      }
-      let recapOn = false;
-      function render() {
-        $("pick").hidden = !!me;
-        if (!me || !G) return;
-        const R =
-          G.last &&
-          me === G.last.setter &&
-          localStorage.getItem("seen") !== String(G.last.round)
-            ? G.last
-            : null;
-        recapOn = !!R;
-        $("done").style.pointerEvents = R ? "auto" : "";
-        draw(
-          R
-            ? {
-                ...G,
-                ...R,
-                note: R.note || null,
-                noteBy: R.noteBy || null,
-                status: "done",
-              }
-            : G,
-          !!R,
-        );
-      }
-      $("done").addEventListener("click", () => {
-        if (!recapOn) return;
-        localStorage.setItem("seen", String(G.last.round));
-        render();
-      });
-      function draw(G, recap) {
-        $("pick").hidden = !!me;
-        if (!me || !G) return;
-        $("bell").hidden =
-          !("Notification" in window) || Notification.permission === "granted";
-        const gs = G.guesses || [],
-          setter = G.setter,
-          guesser = other(setter);
-        const guessing = G.status === "guessing",
-          done = G.status === "done",
-          amG = me === guesser;
-        $("sw").textContent = "You: " + me + " (switch)";
-        $("score").textContent =
-          "Graeme " +
-          (G.score?.Graeme || 0) +
-          " – " +
-          (G.score?.Stephen || 0) +
-          " Stephen";
-        $("msg").textContent =
-          G.status === "setting"
-            ? me === setter
-              ? "Pick a secret word for " + guesser
-              : "Waiting for " + setter + " to set a word…"
-            : guessing
-              ? amG
-                ? "Your turn to guess, " + me
-                : guesser + " is guessing your word: " + G.word.toUpperCase()
-              : "";
-        $("setbox").hidden = !(G.status === "setting" && me === setter);
-        $("kb").hidden = !(guessing && amG);
-
-        const rows = [];
-        const keys = {};
-        for (let r = 0; r < 6; r++) {
-          let h = '<div class="row">';
-          const g = gs[r];
-          const res = g ? ev(g, G.word) : null;
-          for (let i = 0; i < 5; i++) {
-            const ch = g
-              ? g[i]
-              : r === gs.length && amG && guessing
-                ? cur[i] || ""
-                : "";
-            const cls = res
-              ? res[i] +
-                (r === gs.length - 1 && gs.length !== lastLen ? " flip" : "")
-              : ch
-                ? "f"
-                : "";
-            h += `<div class="t ${cls}" style="animation-delay:${i * 0.25}s">${ch}</div>`;
-            if (res) {
-              const o = { correct: 3, present: 2, absent: 1 };
-              if (!keys[g[i]] || o[res[i]] > o[keys[g[i]]]) keys[g[i]] = res[i];
-            }
-          }
-          rows.push(h + "</div>");
-        }
-        $("board").innerHTML = rows.join("");
-        lastLen = gs.length;
-        buildKb(keys);
-
-        $("done").hidden = !done;
-        if (done) {
-          const win = G.result === "win";
-          $("dt").textContent = win
-            ? guesser + " is great!"
-            : guesser + " is a Loser";
-          $("ds").textContent =
-            (win
-              ? "Solved in " + gs.length + "/6"
-              : "The word was " + G.word.toUpperCase()) +
-            (recap ? " · tap anywhere to continue" : "");
-          $("next").textContent = guesser + " sets the next word";
-          $("next").hidden = recap;
-          $("noteShow").hidden = !G.note;
-          $("noteShow").textContent = G.note
-            ? G.noteBy + ": “" + G.note + "”"
-            : "";
-          $("noteBox").hidden = !amG || !!G.note;
-          if (recap) {
-            if (lastRound !== G.round) {
-              lastRound = G.round;
-              setTimeout(() => (win ? celebrate() : disaster()), 1400);
-            }
-          } else if (localStorage.getItem("seen") !== String(G.round)) {
-            localStorage.setItem("seen", G.round);
-            setTimeout(() => (win ? celebrate() : disaster()), 1400);
-          }
-        }
+      function reveal() {
+        var wait = Math.max(0, MIN_LOAD - (Date.now() - start));
+        setTimeout(function () {
+          loader.classList.add("hide");
+          document.body.classList.add("ready");
+        }, wait);
       }
 
-      function buildKb(keys) {
-        const L = ["qwertyuiop", "asdfghjkl", "+zxcvbnm-"];
-        $("kb").innerHTML = L.map(
-          (r) =>
-            '<div class="kr">' +
-            [...r]
-              .map((c) =>
-                c === "+"
-                  ? '<button class="k w" data-k="Enter">Enter</button>'
-                  : c === "-"
-                    ? '<button class="k w" data-k="Backspace">⌫</button>'
-                    : `<button class="k ${keys[c] || ""}" data-k="${c}">${c}</button>`,
-              )
-              .join("") +
-            "</div>",
-        ).join("");
-      }
+      // Wait for the background image, but never hang if it fails
+      var img = new Image();
+      img.onload = img.onerror = reveal;
+      img.src = "back.png";
 
-      function press(k) {
-        if (!G || G.status !== "guessing" || me !== other(G.setter)) return;
-        if (k === "Backspace") cur = cur.slice(0, -1);
-        else if (k === "Enter") return submit();
-        else if (/^[a-z]$/i.test(k) && cur.length < 5) cur += k.toLowerCase();
-        render();
-      }
-
-      function submit() {
-        if (cur.length < 5) return;
-        if (WORDS && !WORDS.has(cur)) {
-          $("msg").textContent = "Not in word list";
-          setTimeout(render, 1500);
-          return;
-        }
-        const gs = [...(G.guesses || []), cur],
-          win = cur === G.word,
-          over = win || gs.length === 6;
-        const upd = { guesses: gs };
-        if (over) {
-          upd.status = "done";
-          upd.result = win ? "win" : "lose";
-          if (win) upd["score/" + me] = (G.score?.[me] || 0) + 1;
-        }
-        cur = "";
-        ref.update(upd);
-      }
-
-      document.addEventListener("keydown", (e) => {
-        if (!e.ctrlKey && !e.metaKey && !e.altKey) press(e.key);
-      });
-      $("kb").addEventListener("click", (e) => {
-        const k = e.target.closest("[data-k]");
-        if (k) press(k.dataset.k);
-      });
-      $("pick").addEventListener("click", (e) => {
-        const p = e.target.dataset.p;
-        if (p) {
-          me = p;
-          localStorage.setItem("me", p);
-          render();
-        }
-      });
-      $("sw").onclick = () => {
-        localStorage.removeItem("me");
-        me = null;
-        render();
-      };
-      $("setb").onclick = () => {
-        const w = $("w").value.trim().toLowerCase();
-        if (!/^[a-z]{5}$/.test(w))
-          return alert("Enter exactly 5 letters (A–Z).");
-        if (WORDS && !WORDS.has(w))
-          return alert("That's not a real word Numdnuts!!");
-        $("w").value = "";
-        ref.update({
-          word: w,
-          status: "guessing",
-          guesses: null,
-          result: null,
+      // Fade out before navigating to a game
+      document.querySelectorAll(".menu-btn").forEach(function (a) {
+        a.addEventListener("click", function (e) {
+          e.preventDefault();
+          document.body.classList.add("leaving");
+          setTimeout(function () {
+            location.href = a.href;
+          }, 250);
         });
-      };
-      $("next").onclick = () =>
-        ref.update({
-          setter: other(G.setter),
-          status: "setting",
-          word: "",
-          guesses: null,
-          result: null,
-          note: null,
-          noteBy: null,
-          last: {
-            setter: G.setter,
-            word: G.word,
-            guesses: G.guesses || [],
-            result: G.result,
-            note: G.note || null,
-            noteBy: G.noteBy || null,
-            round: G.round,
-          },
-          round: G.round + 1,
-        });
-      $("noteBtn").onclick = () => {
-        const t = $("noteIn").value.trim();
-        if (t) {
-          ref.update({ note: t, noteBy: me });
-          $("noteIn").value = "";
-        }
-      };
-      const VAPID_KEY =
-        "BETPcepBUad8jOhlmNqfHMa8oydUi3PddLsX1qs8W9kc9v15KZjZSXZ6xCkCIL8RSCpexCe1As8tLEFsV7AgX_U";
-      async function enableNotifs(silent) {
-        try {
-          const perm = await Notification.requestPermission();
-          if (perm !== "granted") {
-            if (!silent)
-              alert(
-                "Notifications are blocked. Turn them on in iPhone Settings, Notifications, Wordle.",
-              );
-            return;
-          }
-          const reg = await navigator.serviceWorker.register(
-            "firebase-messaging-sw.js",
-          );
-          const token = await firebase.messaging().getToken({
-            vapidKey: VAPID_KEY,
-            serviceWorkerRegistration: reg,
-          });
-          await firebase
-            .database()
-            .ref("tokens/" + me)
-            .set(token);
-          $("bell").hidden = true;
-          if (!silent) alert("Notifications are on");
-        } catch (e) {
-          if (!silent) alert("Couldn't turn on notifications: " + e.message);
-        }
-      }
-      $("bell").onclick = () => enableNotifs(false);
-      if (
-        me &&
-        "Notification" in window &&
-        Notification.permission === "granted"
-      )
-        enableNotifs(true);
-      // ---------- sound & effects ----------
-      ["touchend", "click"].forEach((e) =>
-        document.addEventListener(e, () => {
-          AC = AC || new AudioContext();
-          AC.resume();
-        }),
-      );
-      function tone(f, t, d, type = "square", v = 0.18) {
-        try {
-          AC = AC || new AudioContext();
-          AC.resume();
-          const o = AC.createOscillator(),
-            g = AC.createGain(),
-            s = AC.currentTime + t;
-          o.type = type;
-          o.frequency.value = f;
-          g.gain.setValueAtTime(v, s);
-          g.gain.exponentialRampToValueAtTime(0.001, s + d);
-          o.connect(g);
-          g.connect(AC.destination);
-          o.start(s);
-          o.stop(s + d);
-        } catch (e) {}
-      }
-      function bits(list, n, size) {
-        for (let i = 0; i < n; i++) {
-          const b = document.createElement("div");
-          b.className = "bit";
-          b.textContent = list[i % list.length];
-          b.style.left = Math.random() * 100 + "vw";
-          b.style.fontSize = size + Math.random() * 20 + "px";
-          b.style.animationDuration = 2 + Math.random() * 3 + "s";
-          b.style.animationDelay = Math.random() * 1.5 + "s";
-          document.body.appendChild(b);
-          setTimeout(() => b.remove(), 7000);
-        }
-      }
-      function celebrate() {
-        [
-          [523, 0, 0.12],
-          [523, 0.14, 0.12],
-          [523, 0.28, 0.12],
-          [523, 0.42, 0.3],
-          [415, 0.76, 0.3],
-          [466, 1.08, 0.3],
-          [523, 1.4, 0.15],
-          [466, 1.58, 0.12],
-          [523, 1.72, 0.7],
-        ].forEach(([f, t, d]) => {
-          tone(f, t, d);
-          tone(f / 2, t, d, "triangle", 0.2);
-        });
-        bits(["🎉", "🎊", "⭐", "✨", "🏆"], 70, 24);
-      }
-      function disaster() {
-        [
-          [392, 0, 0.45],
-          [370, 0.5, 0.45],
-          [349, 1, 0.45],
-          [311, 1.5, 1.3],
-        ].forEach(([f, t, d]) => tone(f, t, d, "sawtooth", 0.22));
-        const r = document.createElement("div");
-        r.className = "red";
-        document.body.appendChild(r);
-        setTimeout(() => r.remove(), 2600);
-        document.body.classList.add("shake");
-        $("board").classList.add("drop");
-        setTimeout(() => {
-          document.body.classList.remove("shake");
-          $("board").classList.remove("drop");
-        }, 2400);
-        bits(["💩", "💀", "🤡", "🪦", "😭"], 70, 26);
-      }
+      });
+
+      // Fix state when coming back with the Back button (iOS page cache)
+      window.addEventListener("pageshow", function (e) {
+        if (e.persisted) document.body.classList.remove("leaving");
+      });
     </script>
   </body>
 </html>
