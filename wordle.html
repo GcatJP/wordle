@@ -75,6 +75,23 @@
         font-weight: 700;
         min-width: 110px;
       }
+      #hl {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3px;
+        min-width: 110px;
+      }
+      #hl small {
+        min-width: 0;
+      }
+      #menuBtn {
+        color: var(--fg);
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        padding: 4px 12px 4px 0;
+      }
       header button {
         background: none;
         border: 0;
@@ -354,7 +371,10 @@
   </head>
   <body>
     <header>
-      <small id="score"></small>
+      <div id="hl">
+        <a id="menuBtn" href="index.html">← Menu</a>
+        <small id="score"></small>
+      </div>
       <h1>Wordle</h1>
       <button id="sw"></button>
     </header>

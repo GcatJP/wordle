@@ -266,14 +266,19 @@
         border-radius: 50%;
         background: radial-gradient(circle at 35% 35%, #8a8a8a, #1a1a1a 70%);
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-        left: 84px;
-        top: 80px;
+        left: 80px;
+        top: 89px;
+        opacity: 0;
         animation:
           ballX 3s linear infinite,
           ballY 3s infinite;
       }
       @keyframes ballX {
         0% {
+          left: 80px;
+          opacity: 0;
+        }
+        3% {
           left: 80px;
           opacity: 1;
         }
@@ -286,7 +291,7 @@
           opacity: 0;
         }
         100% {
-          left: 84px;
+          left: 80px;
           opacity: 0;
         }
       }
@@ -306,7 +311,6 @@
           top: 125px;
         }
       }
-
       /* ---------- Loading screen ---------- */
       .loader {
         position: fixed;
