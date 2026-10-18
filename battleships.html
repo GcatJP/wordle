@@ -624,10 +624,23 @@
       var busy = false;
       var lastShot = -1;
 
+      function recapDue(d) {
+        var lr = d.lastResult;
+        if (!lr || !lr.players || !lr.players[me] || !lr.players[opp])
+          return false;
+        if (localStorage.getItem("bs_seen") === String(lr.id)) return false;
+        if (localStorage.getItem("bs_sawResults") === "1") {
+          localStorage.setItem("bs_seen", String(lr.id));
+          localStorage.removeItem("bs_sawResults");
+          return false;
+        }
+        return true;
+      }
+
       function phaseOf(d) {
         var m = d[me] || {},
           t = d[opp] || {};
-        if (!m.ships) return "place";
+        if (!m.ships) return recapDue(d) ? "recap" : "place";
         if (!t.ships) return "waitships";
         if (!m.done) return "play";
         if (!t.done) return "waitfinish";
@@ -684,7 +697,15 @@
           show("s-waitfinish");
         }
         if (p === "results") {
-          renderResults();
+          localStorage.setItem("bs_sawResults", "1");
+          $("newGameBtn").textContent = "New game";
+          renderResults(data[me], data[opp]);
+          show("s-results");
+        }
+        if (p === "recap") {
+          var lr = data.lastResult;
+          $("newGameBtn").textContent = "Continue";
+          renderResults(lr.players[me], lr.players[opp]);
           show("s-results");
         }
       }
@@ -984,9 +1005,7 @@
         }
       }
 
-      function renderResults() {
-        var m = data[me],
-          t = data[opp];
+      function renderResults(m, t) {
         var myShots = toArr(m.shots),
           theirShots = toArr(t.shots);
         var myTries = m.tries || myShots.length;
@@ -1025,8 +1044,23 @@
       }
 
       $("newGameBtn").addEventListener("click", function () {
-        if (confirm("Start a new game? This clears both boards."))
-          root.remove();
+        if (phase === "recap") {
+          localStorage.setItem("bs_seen", String(data.lastResult.id));
+          phase = phaseOf(data);
+          enterPhase(phase);
+          return;
+        }
+        if (!confirm("Start a new game? This clears both boards.")) return;
+        var snap = { id: Date.now(), players: {} };
+        [me, opp].forEach(function (p) {
+          var d = data[p] || {};
+          snap.players[p] = {
+            ships: toArr(d.ships),
+            shots: toArr(d.shots),
+            tries: d.tries || toArr(d.shots).length,
+          };
+        });
+        root.set({ lastResult: snap });
       });
 
       /* ---------- Go ---------- */
