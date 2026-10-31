@@ -94,6 +94,20 @@
         text-decoration: none;
       }
 
+      .scorebar {
+        display: none;
+        justify-content: center;
+        margin: -2px 0 10px;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+      .scorebar span {
+        background: rgba(9, 26, 41, 0.7);
+        border: 1px solid var(--brass-dim);
+        border-radius: 999px;
+        padding: 4px 14px;
+        color: var(--brass);
+      }
       h1,
       h2 {
         margin: 0;
@@ -439,6 +453,8 @@
         <button id="switchBtn" style="display: none"></button>
       </div>
 
+      <div class="scorebar" id="scoreBar"><span id="score"></span></div>
+
       <!-- Connecting -->
       <div class="screen on" id="s-loading">
         <div class="panel big">
@@ -452,7 +468,7 @@
         <h1>BATTLESHIPS</h1>
         <div class="panel">
           <h2>Who's playing on this phone?</h2>
-          <button class="btn" data-who="graeme">I'm Graeme</button>
+          <button class="btn" data-who="Elle">I'm Elle</button>
           <button class="btn" data-who="stephen">I'm Stephen</button>
         </div>
       </div>
@@ -530,13 +546,12 @@
       ============================================================ */
 
       var firebaseConfig = {
-        apiKey: "AIzaSyBr_drU2L3wndWce7i2Pjtpepuwc_VnAzY",
-        authDomain: "wordle-d7fab.firebaseapp.com",
+        apiKey: "AIzaSyDx__LsbF99d1mcst4rQMzxySn7IxTH-Co",
+        authDomain: "stephen-d1376.firebaseapp.com",
         databaseURL:
-          "https://wordle-d7fab-default-rtdb.asia-southeast1.firebasedatabase.app",
-
-        projectId: "wordle-d7fab",
-        appId: "1:1048912631015:web:f389f317c49a4eeb89be42",
+          "https://stephen-d1376-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "stephen-d1376",
+        appId: "1:593459222936:web:445c5ea1fccd03e67733ed",
       };
       firebase.initializeApp(firebaseConfig);
       var root = firebase.database().ref("battleships");
@@ -550,7 +565,7 @@
         { id: "destroyer", name: "Destroyer", size: 2 },
       ];
       var WAIT_TEXT =
-        "Let's wait for {N} to finish his game but he is much better than you so I assume you lost!";
+        "Let's wait for {N} to finish their game but they are much better than you so I assume you lost!";
 
       /* ---------- Helpers ---------- */
       function $(id) {
@@ -601,7 +616,7 @@
       var opp = null;
       function setPlayer(p) {
         me = p;
-        opp = p === "graeme" ? "stephen" : "graeme";
+        opp = p === "Elle" ? "stephen" : "Elle";
         localStorage.setItem("bs_me", p);
         $("switchBtn").style.display = "";
         $("switchBtn").textContent = "Playing as " + cap(me) + " ✎";
@@ -647,10 +662,35 @@
         return "results";
       }
 
+      function renderScore() {
+        var sc = data.scores || {};
+        $("score").textContent =
+          "Elle " + (sc.Elle || 0) + " – " + (sc.stephen || 0) + " Stephen";
+        $("scoreBar").style.display = "flex";
+      }
+
+      // Adds one win to the winner, once per game (ties score nothing)
+      function bankScore() {
+        root.transaction(function (cur) {
+          if (!cur || cur.counted) return;
+          var a = cur.Elle || {},
+            b = cur.stephen || {};
+          if (!a.done || !b.done) return;
+          var ta = a.tries || toArr(a.shots).length,
+            tb = b.tries || toArr(b.shots).length;
+          cur.scores = cur.scores || {};
+          if (ta < tb) cur.scores.Elle = (cur.scores.Elle || 0) + 1;
+          else if (tb < ta) cur.scores.stephen = (cur.scores.stephen || 0) + 1;
+          cur.counted = true;
+          return cur;
+        });
+      }
+
       function start() {
         show("s-loading");
         root.on("value", function (snap) {
           data = snap.val() || {};
+          renderScore();
           var p = phaseOf(data);
           if (p !== phase) {
             var prev = phase;
@@ -677,7 +717,7 @@
           $("waitShipsText").textContent =
             "Your fleet is locked in. Waiting for " +
             cap(opp) +
-            " to place his ships…";
+            " to place their ships…";
           show("s-waitships");
         }
         if (p === "play") {
@@ -691,13 +731,14 @@
         if (p === "waitfinish") {
           $("waitFinishText").textContent = WAIT_TEXT.replace("{N}", cap(opp));
           $("myTriesText").textContent =
-            "You sank his fleet in " +
+            "You sank their fleet in " +
             (data[me].tries || toArr(data[me].shots).length) +
             " shots.";
           show("s-waitfinish");
         }
         if (p === "results") {
           localStorage.setItem("bs_sawResults", "1");
+          bankScore();
           $("newGameBtn").textContent = "New game";
           renderResults(data[me], data[opp]);
           show("s-results");
@@ -1060,9 +1101,13 @@
             tries: d.tries || toArr(d.shots).length,
           };
         });
-        root.set({ lastResult: snap });
+        root.update({
+          lastResult: snap,
+          Elle: null,
+          stephen: null,
+          counted: null,
+        });
       });
-
       /* ---------- Go ---------- */
       if (me) {
         setPlayer(me);
