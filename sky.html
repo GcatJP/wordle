@@ -270,7 +270,8 @@
       }
       .sp {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
+        gap: 8px;
         align-items: center;
         justify-content: center;
         width: 100%;
@@ -574,7 +575,6 @@
             : g.pos === N
               ? "Holding over the airport. Slow down. "
               : "Round " + g.round + ". ") +
-          "Discuss, then roll. " +
           g[g.turn] +
           " goes first.";
       }
@@ -636,7 +636,7 @@
       function cell(g, s, v, ok) {
         const pl = g.placed && g.placed[s.id],
           dep = s.n !== undefined && g[s.t][s.n];
-        return `<button class="sp ${s.r} ${s.t === "axis" || s.t === "eng" ? "M" : ""} ${pl ? "full" : ""} ${ok && !pl && v && allowed(g, ok, s, v) ? "ok" : ""} ${dep ? "dep" : ""}" data-act="sp" data-v="${s.id}">${pl ? pl.v : s.ok ? s.ok.join("/") : ""}<small>${s.l}${dep ? " ✓" : ""}</small></button>`;
+        return `<button class="sp ${s.r} ${s.t === "axis" || s.t === "eng" ? "M" : ""} ${pl ? "full" : ""} ${ok && !pl && v && allowed(g, ok, s, v) ? "ok" : ""} ${dep ? "dep" : ""}" data-act="sp" data-v="${s.id}"><small>${s.l}${dep ? " ✓" : ""}</small>${pl ? pl.v : s.ok ? s.ok.join("/") : ""}</button>`;
       }
       function game(m, g) {
         const role = roleOf(g),
@@ -731,10 +731,7 @@
           phase: "place",
           turn: "pilot",
           speed: 0,
-          msg:
-            "Discuss your plan, then roll. " +
-            pilot +
-            " goes first." +
+
             (rolls.length ? " Traffic dice: " + rolls.join(", ") + "." : ""),
         };
         // only create if this game doesn't already exist
