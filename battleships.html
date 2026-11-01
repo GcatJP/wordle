@@ -468,7 +468,7 @@
         <h1>BATTLESHIPS</h1>
         <div class="panel">
           <h2>Who's playing on this phone?</h2>
-          <button class="btn" data-who="Elle">I'm Elle</button>
+          <button class="btn" data-who="Graeme">I'm Graeme</button>
           <button class="btn" data-who="stephen">I'm Stephen</button>
         </div>
       </div>
@@ -616,7 +616,7 @@
       var opp = null;
       function setPlayer(p) {
         me = p;
-        opp = p === "Elle" ? "stephen" : "Elle";
+        opp = p === "Graeme" ? "stephen" : "Graeme";
         localStorage.setItem("bs_me", p);
         $("switchBtn").style.display = "";
         $("switchBtn").textContent = "Playing as " + cap(me) + " ✎";
@@ -665,7 +665,7 @@
       function renderScore() {
         var sc = data.scores || {};
         $("score").textContent =
-          "Elle " + (sc.Elle || 0) + " – " + (sc.stephen || 0) + " Stephen";
+          "Graeme " + (sc.Graeme || 0) + " – " + (sc.stephen || 0) + " Stephen";
         $("scoreBar").style.display = "flex";
       }
 
@@ -673,13 +673,13 @@
       function bankScore() {
         root.transaction(function (cur) {
           if (!cur || cur.counted) return;
-          var a = cur.Elle || {},
+          var a = cur.Graeme || {},
             b = cur.stephen || {};
           if (!a.done || !b.done) return;
           var ta = a.tries || toArr(a.shots).length,
             tb = b.tries || toArr(b.shots).length;
           cur.scores = cur.scores || {};
-          if (ta < tb) cur.scores.Elle = (cur.scores.Elle || 0) + 1;
+          if (ta < tb) cur.scores.Graeme = (cur.scores.Graeme || 0) + 1;
           else if (tb < ta) cur.scores.stephen = (cur.scores.stephen || 0) + 1;
           cur.counted = true;
           return cur;
@@ -1103,7 +1103,7 @@
         });
         root.update({
           lastResult: snap,
-          Elle: null,
+          Graeme: null,
           stephen: null,
           counted: null,
         });
