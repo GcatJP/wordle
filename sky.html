@@ -570,13 +570,11 @@
         g.phase = "place";
         g.turn = g.round % 2 ? "pilot" : "copilot";
         g.msg =
-          (g.alt === 6
-            ? "Final approach! "
+          g.alt === 6
+            ? "Final approach!"
             : g.pos === N
-              ? "Holding over the airport. Slow down. "
-              : "Round " + g.round + ". ") +
-          g[g.turn] +
-          " goes first.";
+              ? "Holding over the airport. Slow down."
+              : "Round " + g.round + ".";
       }
 
       function render() {
@@ -731,8 +729,7 @@
           phase: "place",
           turn: "pilot",
           speed: 0,
-
-            (rolls.length ? " Traffic dice: " + rolls.join(", ") + "." : ""),
+          msg: rolls.length ? "Traffic dice: " + rolls.join(", ") + "." : "",
         };
         // only create if this game doesn't already exist
         G().transaction((cur) => (cur ? undefined : ng));
