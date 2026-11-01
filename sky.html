@@ -387,12 +387,14 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <script>
       firebase.initializeApp({
-        apiKey: "AIzaSyDx__LsbF99d1mcst4rQMzxySn7IxTH-Co",
-        authDomain: "stephen-d1376.firebaseapp.com",
+        apiKey: "AIzaSyBr_drU2L3wndWce7i2Pjtpepuwc_VnAzY",
+        authDomain: "wordle-d7fab.firebaseapp.com",
         databaseURL:
-          "https://stephen-d1376-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "stephen-d1376",
-        appId: "1:593459222936:web:445c5ea1fccd03e67733ed",
+          "https://wordle-d7fab-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "wordle-d7fab",
+        storageBucket: "wordle-d7fab.firebasestorage.app",
+        messagingSenderId: "1048912631015",
+        appId: "1:1048912631015:web:f389f317c49a4eeb89be42",
       });
       const root = firebase.database().ref("skyteam");
       const $ = (id) => document.getElementById(id);
@@ -645,30 +647,26 @@
             pl[i - 1]++;
             rolls.push("R" + k + "→R" + i);
           });
-          root
-            .child("game")
-            .set({
-              airport: pickA,
-              pilot: pilot,
-              copilot: oth(pilot),
-              round: 1,
-              pos: 1,
-              alt: 0,
-              planes: pl,
-              gear: [0, 0, 0],
-              flap: [0, 0, 0, 0],
-              brk: [0, 0, 0],
-              axis: 0,
-              coffee: 0,
-              rr: 1,
-              phase: "discuss",
-              speed: 0,
-              msg:
-                "Discuss your plan, then roll." +
-                (rolls.length
-                  ? " Traffic dice: " + rolls.join(", ") + "."
-                  : ""),
-            });
+          root.child("game").set({
+            airport: pickA,
+            pilot: pilot,
+            copilot: oth(pilot),
+            round: 1,
+            pos: 1,
+            alt: 0,
+            planes: pl,
+            gear: [0, 0, 0],
+            flap: [0, 0, 0, 0],
+            brk: [0, 0, 0],
+            axis: 0,
+            coffee: 0,
+            rr: 1,
+            phase: "discuss",
+            speed: 0,
+            msg:
+              "Discuss your plan, then roll." +
+              (rolls.length ? " Traffic dice: " + rolls.join(", ") + "." : ""),
+          });
           pickA = null;
           return;
         } else if (a === "roll") {
@@ -757,13 +755,11 @@
             g.dice.copilot
           ) {
             const first = g.round % 2 ? "pilot" : "copilot";
-            root
-              .child("game")
-              .update({
-                phase: "place",
-                turn: first,
-                msg: "Dice rolled. " + g[first] + " goes first.",
-              });
+            root.child("game").update({
+              phase: "place",
+              turn: first,
+              msg: "Dice rolled. " + g[first] + " goes first.",
+            });
           }
           if (sel >= 0 && !((g.dice && g.dice[roleOf(g)]) || [])[sel]) {
             sel = -1;
