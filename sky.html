@@ -389,7 +389,7 @@
     <div id="app">
       <div class="top">
         <a href="index.html">← Menu</a>
-        <button id="vw" hidden>⇄ Switch game</button>
+        <button id="vw" hidden>← Back</button>
         <button id="sw" hidden></button>
       </div>
       <div id="main"></div>
@@ -458,15 +458,16 @@
       // view = which game I'm in: "pilot" (I fly) or "copilot" (other player is pilot)
       // Two games live in Firebase at skyteam/games/<pilotName>
       let me = localStorage.getItem("sky_me"),
+        ap = null,
         view = null,
         D = {},
         sel = -1,
         adj = 0,
         rsel = [];
-      const key = () => (view === "pilot" ? me : oth(me));
+      const key = () => ap + "_" + (view === "pilot" ? me : oth(me));
       const G = () => root.child("games/" + key());
       const curGame = () =>
-        (me && view && D.games ? D.games[key()] : null) || null;
+        (me && ap && view && D.games ? D.games[key()] : null) || null;
       const cnt = (a) => (a || []).reduce((x, y) => x + (y ? 1 : 0), 0);
       const blue = (g) => 4.5 + cnt(g.gear),
         orange = (g) => 8.5 + cnt(g.flap),
@@ -582,53 +583,55 @@
         const m = $("main");
         $("sw").hidden = !me;
         $("sw").textContent = "Playing as " + me + " ✎";
-        $("vw").hidden = !(me && view);
+        $("vw").hidden = !(me && ap);
         if (!me) {
           m.innerHTML = `<h1>SKY TEAM</h1><div class="panel"><h2>Who's playing on this phone?</h2>${PL.map((n) => `<button class="btn" data-act="who" data-v="${n}">I'm ${n}</button>`).join("")}</div>`;
           return;
         }
+        if (!ap) return lobby(m);
         if (!view) return chooser(m);
         const g = curGame();
-        g ? game(m, g) : lobby(m);
+        if (g) game(m, g);
+        else m.innerHTML = `<h1>SKY TEAM</h1><p class="c">Starting game…</p>`;
       }
-      // Pilot / Co-Pilot prompt shown every time the app opens
+      // Step 1: airport list
+      function lobby(m) {
+        const gs = D.games || {};
+        let h = `<h1>SKY TEAM</h1><p class="c">Choose an airport</p>`;
+        for (const k in AIR) {
+          const a = AIR[k],
+            w = (D.wins || {})[k] || {},
+            done = w.Graeme && w.Stephen,
+            live = [me, oth(me)].filter(
+              (p) => gs[k + "_" + p] && gs[k + "_" + p].phase !== "over",
+            ).length;
+          h += `<button class="ap" data-act="air" data-v="${k}">${done ? '<i class="ban">Completed</i>' : ""}<b>${a.name}</b><small>${a.code} · ${a.base.length} spaces${a.dice.length ? " · random traffic" : ""}</small><small>Won as Pilot: ${PL.filter((n) => w[n]).join(", ") || "none yet"}</small>${live ? `<small>⏳ ${live} game${live > 1 ? "s" : ""} in progress</small>` : ""}</button>`;
+        }
+        m.innerHTML =
+          h +
+          `<button class="lnk" data-act="resetdone">Reset completed airports</button>`;
+      }
+      // Step 2: Pilot / Co-Pilot prompt for the chosen airport
       function chooser(m) {
         const o = oth(me);
         const card = (r) => {
-          const k = r === "pilot" ? me : o,
+          const k = ap + "_" + (r === "pilot" ? me : o),
             g = (D.games || {})[k];
           const you = r === "pilot" ? "Pilot" : "Co-Pilot",
             mate = r === "pilot" ? "Co-Pilot" : "Pilot";
           let s;
           if (!g) s = "No game yet · tap to start one";
           else if (g.phase === "over")
-            s =
-              (g.over.w ? "🏆 Landed" : "💥 Mission failed") +
-              " · " +
-              AIR[g.airport].name;
+            s = g.over.w ? "🏆 Landed" : "💥 Mission failed";
           else
             s =
-              AIR[g.airport].name +
-              " · Round " +
+              "Round " +
               Math.min(g.round, 7) +
               "/7" +
               (g.phase === "place" && g.turn === r ? " · ⏳ your turn" : "");
           return `<button class="ap" data-act="view" data-v="${r}"><b>${r === "pilot" ? "✈ " : "🧑‍✈️ "}Play as ${you}</b><small>${s}</small><small>${o} is the ${mate}</small></button>`;
         };
-        m.innerHTML = `<h1>SKY TEAM</h1><p class="c">Which game do you want to play?</p>${card("pilot")}${card("copilot")}`;
-      }
-      // Airport choice for an empty game slot
-      function lobby(m) {
-        let h = `<h1>SKY TEAM</h1><p class="c">${view === "pilot" ? "Pilot" : "Co-Pilot"} game with ${oth(me)} · choose an airport</p>`;
-        for (const k in AIR) {
-          const a = AIR[k],
-            w = (D.wins || {})[k] || {},
-            done = w.Graeme && w.Stephen;
-          h += `<button class="ap" data-act="air" data-v="${k}">${done ? '<i class="ban">Completed</i>' : ""}<b>${a.name}</b><small>${a.code} · ${a.base.length} spaces${a.dice.length ? " · random traffic" : ""}</small><small>Won as Pilot: ${PL.filter((n) => w[n]).join(", ") || "none yet"}</small></button>`;
-        }
-        m.innerHTML =
-          h +
-          `<button class="lnk" data-act="resetdone">Reset completed airports</button>`;
+        m.innerHTML = `<h1>SKY TEAM</h1><p class="c">${AIR[ap].name}</p><p class="c">Which game do you want to play?</p>${card("pilot")}${card("copilot")}`;
       }
       function cell(g, s, v, ok) {
         const pl = g.placed && g.placed[s.id],
@@ -700,65 +703,71 @@
         }
         m.innerHTML = h;
       }
-
+      function newGame() {
+        const A = AIR[ap],
+          pilot = view === "pilot" ? me : oth(me),
+          pl = A.base.slice(),
+          N = pl.length,
+          rolls = [];
+        A.dice.forEach((k) => {
+          const i = Math.min(k + 1 + rd(4), N);
+          pl[i - 1]++;
+          rolls.push("R" + k + "→R" + i);
+        });
+        const ng = {
+          airport: ap,
+          pilot: pilot,
+          copilot: oth(pilot),
+          round: 1,
+          pos: 1,
+          alt: 0,
+          planes: pl,
+          gear: [0, 0, 0],
+          flap: [0, 0, 0, 0],
+          brk: [0, 0, 0],
+          axis: 0,
+          coffee: 0,
+          rr: 1,
+          phase: "place",
+          turn: "pilot",
+          speed: 0,
+          msg:
+            "Discuss your plan, then roll. " +
+            pilot +
+            " goes first." +
+            (rolls.length ? " Traffic dice: " + rolls.join(", ") + "." : ""),
+        };
+        // only create if this game doesn't already exist
+        G().transaction((cur) => (cur ? undefined : ng));
+      }
       function act(a, v) {
         const g = curGame(),
           role = g && roleOf(g);
         if (a === "who") {
           me = v;
+          ap = null;
           view = null;
           localStorage.setItem("sky_me", v);
         } else if (a === "sw") {
           localStorage.removeItem("sky_me");
           me = null;
+          ap = null;
+          view = null;
+        } else if (a === "air") {
+          ap = v;
           view = null;
         } else if (a === "view") {
           view = v;
           sel = -1;
           adj = 0;
           rsel = [];
+          if (!curGame()) newGame();
         } else if (a === "back") {
-          view = null;
+          if (view) view = null;
+          else ap = null;
           sel = -1;
           adj = 0;
           rsel = [];
-        } else if (a === "air") {
-          const A = AIR[v],
-            pilot = key(),
-            pl = A.base.slice(),
-            N = pl.length,
-            rolls = [];
-          A.dice.forEach((k) => {
-            const i = Math.min(k + 1 + rd(4), N);
-            pl[i - 1]++;
-            rolls.push("R" + k + "→R" + i);
-          });
-          const ng = {
-            airport: v,
-            pilot: pilot,
-            copilot: oth(pilot),
-            round: 1,
-            pos: 1,
-            alt: 0,
-            planes: pl,
-            gear: [0, 0, 0],
-            flap: [0, 0, 0, 0],
-            brk: [0, 0, 0],
-            axis: 0,
-            coffee: 0,
-            rr: 1,
-            phase: "place",
-            turn: "pilot",
-            speed: 0,
-            msg:
-              "Discuss your plan, then roll. " +
-              pilot +
-              " goes first." +
-              (rolls.length ? " Traffic dice: " + rolls.join(", ") + "." : ""),
-          };
-          // only create if this slot is still empty
-          G().transaction((cur) => (cur ? undefined : ng));
-          return;
         } else if (a === "roll") {
           if (!g || (g.rolled && g.rolled[role])) return;
           G().update({
@@ -840,6 +849,8 @@
           return;
         } else if (a === "newgame") {
           G().remove();
+          ap = null;
+          view = null;
           sel = -1;
           adj = 0;
           return;
