@@ -70,6 +70,7 @@
       .top {
         display: flex;
         justify-content: space-between;
+        gap: 6px;
         margin-bottom: 10px;
         font-size: 0.85rem;
       }
@@ -284,9 +285,9 @@
         border-radius: 10px;
       }
       .sp small {
-        font-size: 0.65rem;
-        font-weight: 600;
-        opacity: 0.8;
+        font-size: 1.15rem;
+        font-weight: 900;
+        opacity: 1;
       }
       .sp.P {
         border-color: var(--blue);
@@ -296,6 +297,14 @@
       }
       .sp.K {
         border-color: #bbb;
+      }
+      .sp.M,
+      .sp.full.M {
+        border-color: #ff4d4d;
+      }
+      .sp.M {
+        border-style: dotted;
+        border-width: 3px;
       }
       .sp.full.P {
         background: var(--blue);
@@ -379,7 +388,9 @@
     <div class="bg"></div>
     <div id="app">
       <div class="top">
-        <a href="index.html">← Menu</a><button id="sw" hidden></button>
+        <a href="index.html">← Menu</a>
+        <button id="vw" hidden>⇄ Switch game</button>
+        <button id="sw" hidden></button>
       </div>
       <div id="main"></div>
     </div>
@@ -423,9 +434,9 @@
         },
       };
       const SP = [
-        { id: "Pr", r: "P", t: "radio", l: "Radio" },
         { id: "Pa", r: "P", t: "axis", l: "Axis" },
         { id: "Pe", r: "P", t: "eng", l: "Engines" },
+        { id: "Pr", r: "P", t: "radio", l: "Radio" },
         { id: "G0", r: "P", t: "gear", n: 0, ok: [1, 2], l: "Gear" },
         { id: "G1", r: "P", t: "gear", n: 1, ok: [3, 4], l: "Gear" },
         { id: "G2", r: "P", t: "gear", n: 2, ok: [5, 6], l: "Gear" },
@@ -444,12 +455,18 @@
         { id: "K1", r: "K", t: "cof", l: "Coffee" },
         { id: "K2", r: "K", t: "cof", l: "Coffee" },
       ];
+      // view = which game I'm in: "pilot" (I fly) or "copilot" (other player is pilot)
+      // Two games live in Firebase at skyteam/games/<pilotName>
       let me = localStorage.getItem("sky_me"),
+        view = null,
         D = {},
-        pickA = null,
         sel = -1,
         adj = 0,
         rsel = [];
+      const key = () => (view === "pilot" ? me : oth(me));
+      const G = () => root.child("games/" + key());
+      const curGame = () =>
+        (me && view && D.games ? D.games[key()] : null) || null;
       const cnt = (a) => (a || []).reduce((x, y) => x + (y ? 1 : 0), 0);
       const blue = (g) => 4.5 + cnt(g.gear),
         orange = (g) => 8.5 + cnt(g.flap),
@@ -460,6 +477,15 @@
       function allowed(g, role, s, v) {
         if (s.r !== "K" && s.r !== (role === "pilot" ? "P" : "C")) return false;
         if (g.placed && g.placed[s.id]) return false;
+        const left = ((g.dice && g.dice[role]) || []).length,
+          mine = SP.filter(
+            (x) =>
+              x.r === (role === "pilot" ? "P" : "C") &&
+              (x.t === "axis" || x.t === "eng"),
+          ),
+          need = mine.filter((x) => !(g.placed && g.placed[x.id])).length;
+        if (need && left <= need && !mine.some((x) => x.id === s.id))
+          return false;
         if (s.ok && !s.ok.includes(v)) return false;
         if ((s.t === "flap" || s.t === "brk") && s.n > 0 && !g[s.t][s.n - 1])
           return false;
@@ -537,38 +563,68 @@
         g.round++;
         delete g.placed;
         delete g.dice;
-        g.phase = "discuss";
+        delete g.rolled;
+        // New round starts straight away: whoever goes first can roll and play
+        g.phase = "place";
+        g.turn = g.round % 2 ? "pilot" : "copilot";
         g.msg =
-          g.alt === 6
-            ? "Final approach! Discuss, then roll."
+          (g.alt === 6
+            ? "Final approach! "
             : g.pos === N
-              ? "Holding over the airport. Slow down, then roll."
-              : "Round " + g.round + ". Discuss, then roll.";
+              ? "Holding over the airport. Slow down. "
+              : "Round " + g.round + ". ") +
+          "Discuss, then roll. " +
+          g[g.turn] +
+          " goes first.";
       }
 
       function render() {
         const m = $("main");
         $("sw").hidden = !me;
         $("sw").textContent = "Playing as " + me + " ✎";
+        $("vw").hidden = !(me && view);
         if (!me) {
           m.innerHTML = `<h1>SKY TEAM</h1><div class="panel"><h2>Who's playing on this phone?</h2>${PL.map((n) => `<button class="btn" data-act="who" data-v="${n}">I'm ${n}</button>`).join("")}</div>`;
           return;
         }
-        D.game ? game(m, D.game) : lobby(m);
+        if (!view) return chooser(m);
+        const g = curGame();
+        g ? game(m, g) : lobby(m);
       }
+      // Pilot / Co-Pilot prompt shown every time the app opens
+      function chooser(m) {
+        const o = oth(me);
+        const card = (r) => {
+          const k = r === "pilot" ? me : o,
+            g = (D.games || {})[k];
+          const you = r === "pilot" ? "Pilot" : "Co-Pilot",
+            mate = r === "pilot" ? "Co-Pilot" : "Pilot";
+          let s;
+          if (!g) s = "No game yet · tap to start one";
+          else if (g.phase === "over")
+            s =
+              (g.over.w ? "🏆 Landed" : "💥 Mission failed") +
+              " · " +
+              AIR[g.airport].name;
+          else
+            s =
+              AIR[g.airport].name +
+              " · Round " +
+              Math.min(g.round, 7) +
+              "/7" +
+              (g.phase === "place" && g.turn === r ? " · ⏳ your turn" : "");
+          return `<button class="ap" data-act="view" data-v="${r}"><b>${r === "pilot" ? "✈ " : "🧑‍✈️ "}Play as ${you}</b><small>${s}</small><small>${o} is the ${mate}</small></button>`;
+        };
+        m.innerHTML = `<h1>SKY TEAM</h1><p class="c">Which game do you want to play?</p>${card("pilot")}${card("copilot")}`;
+      }
+      // Airport choice for an empty game slot
       function lobby(m) {
-        const pk = D.picker || "Graeme",
-          mine = pk === me;
-        if (mine && pickA) {
-          m.innerHTML = `<h1>SKY TEAM</h1><div class="panel"><h2>${AIR[pickA].name}</h2><p>Which job do you want?</p><button class="btn" data-act="role" data-v="pilot">I'll be the Pilot</button><button class="btn" data-act="role" data-v="copilot">I'll be the Co-Pilot</button><button class="btn sec" data-act="air" data-v="">Back</button></div>`;
-          return;
-        }
-        let h = `<h1>SKY TEAM</h1><p class="c">${mine ? "Your turn to choose the airport" : pk + " is choosing the airport…"}</p>`;
+        let h = `<h1>SKY TEAM</h1><p class="c">${view === "pilot" ? "Pilot" : "Co-Pilot"} game with ${oth(me)} · choose an airport</p>`;
         for (const k in AIR) {
           const a = AIR[k],
             w = (D.wins || {})[k] || {},
             done = w.Graeme && w.Stephen;
-          h += `<button class="ap" ${mine ? "" : "disabled"} data-act="air" data-v="${k}">${done ? '<i class="ban">Completed</i>' : ""}<b>${a.name}</b><small>${a.code} · ${a.base.length} spaces${a.dice.length ? " · random traffic" : ""}</small><small>Won as Pilot: ${PL.filter((n) => w[n]).join(", ") || "none yet"}</small></button>`;
+          h += `<button class="ap" data-act="air" data-v="${k}">${done ? '<i class="ban">Completed</i>' : ""}<b>${a.name}</b><small>${a.code} · ${a.base.length} spaces${a.dice.length ? " · random traffic" : ""}</small><small>Won as Pilot: ${PL.filter((n) => w[n]).join(", ") || "none yet"}</small></button>`;
         }
         m.innerHTML =
           h +
@@ -577,7 +633,7 @@
       function cell(g, s, v, ok) {
         const pl = g.placed && g.placed[s.id],
           dep = s.n !== undefined && g[s.t][s.n];
-        return `<button class="sp ${s.r} ${pl ? "full" : ""} ${ok && !pl && v && allowed(g, ok, s, v) ? "ok" : ""} ${dep ? "dep" : ""}" data-act="sp" data-v="${s.id}">${pl ? pl.v : s.ok ? s.ok.join("/") : ""}<small>${s.l}${dep ? " ✓" : ""}</small></button>`;
+        return `<button class="sp ${s.r} ${s.t === "axis" || s.t === "eng" ? "M" : ""} ${pl ? "full" : ""} ${ok && !pl && v && allowed(g, ok, s, v) ? "ok" : ""} ${dep ? "dep" : ""}" data-act="sp" data-v="${s.id}">${pl ? pl.v : s.ok ? s.ok.join("/") : ""}<small>${s.l}${dep ? " ✓" : ""}</small></button>`;
       }
       function game(m, g) {
         const role = roleOf(g),
@@ -586,9 +642,12 @@
           A = AIR[g.airport];
         const dice = (g.dice && g.dice[role]) || [],
           od = (g.dice && g.dice[or]) || [];
+        const rolled = g.rolled || {},
+          rolledMe = !!rolled[role];
         const pend = g.rrPend && g.rrPend[role];
         if (!pend) rsel = [];
-        const myTurn = g.phase === "place" && g.turn === role && !g.rrPend;
+        const myTurn =
+          g.phase === "place" && g.turn === role && !g.rrPend && rolledMe;
         const v = myTurn && sel >= 0 && dice[sel] ? dice[sel] + adj : 0;
         let h = `<div class="info"><span>${A.name}</span><span>Round ${Math.min(g.round, 7)}/7 · ${g.alt === 6 ? "Landing" : ALT[g.alt] + " ft"}</span></div>`;
         h += `<div class="trk">${g.planes.map((n, i) => `<div class="${i + 1 === g.pos ? "cur" : ""}"><b>${i + 1 === N ? "🛬" : "R" + (i + 1)}</b>${n ? "✈".repeat(n) : "·"}</div>`).join("")}</div>`;
@@ -598,9 +657,7 @@
         h += `<div class="stats"><span>Speed 0 under ${blue(g)}, 2 over ${orange(g)}</span><span>Brake ${brake(g)}</span><span>☕ ${g.coffee}/3</span><span>🔄 ${g.rr}</span><span class="ax">${ax}</span></div>`;
         h += `<div id="msg">${g.msg || ""}</div>`;
         if (g.phase === "over") {
-          h += `<div class="panel"><div class="res">${g.over.w ? "🏆 You landed!" : "💥 Mission failed"}</div><p class="c">${g.over.m}</p><button class="btn" data-act="newgame">Back to airports</button></div>`;
-        } else if (g.phase === "discuss") {
-          h += `<div class="panel">${dice.length ? `<p class="c">Waiting for ${g[or]} to roll…</p>` : `<button class="btn" data-act="roll">Roll my dice</button>`}</div>`;
+          h += `<div class="panel"><div class="res">${g.over.w ? "🏆 You landed!" : "💥 Mission failed"}</div><p class="c">${g.over.m}</p><button class="btn" data-act="newgame">Choose a new airport</button></div>`;
         } else {
           h += `<div class="cols"><div><h3>${g.pilot} · Pilot</h3>${SP.filter(
             (s) => s.r === "P",
@@ -614,31 +671,60 @@
           h += `<div class="kr">${SP.filter((s) => s.r === "K")
             .map((s) => cell(g, s, v, myTurn && role))
             .join("")}</div>`;
-          h += `<div class="panel" style="margin-top:10px"><p class="c">${pend ? "Reroll: tap the dice to reroll" : g.rrPend ? "Waiting for " + g[or] + " to reroll…" : myTurn ? "Your turn: tap a die, then a space" : "Waiting for " + g[or] + " (" + od.length + " dice left)"}</p><div class="dice">${dice.map((d, i) => `<button class="die ${role === "copilot" ? "C" : ""} ${i === sel && !pend ? "sel" : ""} ${rsel.includes(i) ? "rs" : ""}" data-act="die" data-v="${i}">${d}</button>`).join("")}</div>`;
-          if (pend)
-            h += `<div class="adj"><button class="mini" data-act="rrgo">Reroll selected</button><button class="mini" data-act="rrkeep">Keep all</button></div>`;
-          else if (myTurn && sel >= 0 && dice[sel])
-            h += `<div class="adj"><button class="mini" data-act="adj" data-v="-1">−</button><span>Value ${v}${adj ? " (" + Math.abs(adj) + " ☕)" : ""}</span><button class="mini" data-act="adj" data-v="1">+</button></div>`;
-          if (g.rr > 0 && !g.rrPend)
-            h += `<button class="btn sec" data-act="rr">Use a Reroll token (${g.rr})</button>`;
+          let status;
+          if (pend) status = "Reroll: tap the dice to reroll";
+          else if (g.rrPend) status = "Waiting for " + g[or] + " to reroll…";
+          else if (!rolledMe)
+            status =
+              g.turn === role
+                ? "You go first this round. Roll when you're ready."
+                : "You can roll your dice any time.";
+          else if (myTurn) status = "Your turn: tap a die, then a space";
+          else
+            status = rolled[or]
+              ? "Waiting for " + g[or] + " (" + od.length + " dice left)"
+              : "Waiting for " + g[or] + " to roll…";
+          h += `<div class="panel" style="margin-top:10px"><p class="c">${status}</p>`;
+          if (!rolledMe) {
+            h += `<button class="btn" data-act="roll">Roll my dice</button>`;
+          } else {
+            h += `<div class="dice">${dice.map((d, i) => `<button class="die ${role === "copilot" ? "C" : ""} ${i === sel && !pend ? "sel" : ""} ${rsel.includes(i) ? "rs" : ""}" data-act="die" data-v="${i}">${d}</button>`).join("")}</div>`;
+            if (pend)
+              h += `<div class="adj"><button class="mini" data-act="rrgo">Reroll selected</button><button class="mini" data-act="rrkeep">Keep all</button></div>`;
+            else if (myTurn && sel >= 0 && dice[sel])
+              h += `<div class="adj"><button class="mini" data-act="adj" data-v="-1">−</button><span>Value ${v}${adj ? " (" + Math.abs(adj) + " ☕)" : ""}</span><button class="mini" data-act="adj" data-v="1">+</button></div>`;
+            if (g.rr > 0 && !g.rrPend)
+              h += `<button class="btn sec" data-act="rr">Use a Reroll token (${g.rr})</button>`;
+          }
           h += `</div>`;
         }
         m.innerHTML = h;
       }
 
       function act(a, v) {
-        const g = D.game,
+        const g = curGame(),
           role = g && roleOf(g);
         if (a === "who") {
           me = v;
+          view = null;
           localStorage.setItem("sky_me", v);
         } else if (a === "sw") {
           localStorage.removeItem("sky_me");
           me = null;
-        } else if (a === "air") pickA = v || null;
-        else if (a === "role") {
-          const pilot = v === "pilot" ? me : oth(me),
-            A = AIR[pickA],
+          view = null;
+        } else if (a === "view") {
+          view = v;
+          sel = -1;
+          adj = 0;
+          rsel = [];
+        } else if (a === "back") {
+          view = null;
+          sel = -1;
+          adj = 0;
+          rsel = [];
+        } else if (a === "air") {
+          const A = AIR[v],
+            pilot = key(),
             pl = A.base.slice(),
             N = pl.length,
             rolls = [];
@@ -647,8 +733,8 @@
             pl[i - 1]++;
             rolls.push("R" + k + "→R" + i);
           });
-          root.child("game").set({
-            airport: pickA,
+          const ng = {
+            airport: v,
             pilot: pilot,
             copilot: oth(pilot),
             round: 1,
@@ -661,16 +747,24 @@
             axis: 0,
             coffee: 0,
             rr: 1,
-            phase: "discuss",
+            phase: "place",
+            turn: "pilot",
             speed: 0,
             msg:
-              "Discuss your plan, then roll." +
+              "Discuss your plan, then roll. " +
+              pilot +
+              " goes first." +
               (rolls.length ? " Traffic dice: " + rolls.join(", ") + "." : ""),
-          });
-          pickA = null;
+          };
+          // only create if this slot is still empty
+          G().transaction((cur) => (cur ? undefined : ng));
           return;
         } else if (a === "roll") {
-          root.child("game/dice/" + role).set([rd(6), rd(6), rd(6), rd(6)]);
+          if (!g || (g.rolled && g.rolled[role])) return;
+          G().update({
+            ["dice/" + role]: [rd(6), rd(6), rd(6), rd(6)],
+            ["rolled/" + role]: true,
+          });
           return;
         } else if (a === "die") {
           const i = +v;
@@ -697,7 +791,7 @@
             )
           )
             return;
-          const d = (g.dice[role] || [])[sel],
+          const d = ((g.dice && g.dice[role]) || [])[sel],
             s = SP.find((x) => x.id === v);
           if (!d || !allowed(g, role, s, d + adj)) return;
           const n = JSON.parse(JSON.stringify(g)),
@@ -708,26 +802,44 @@
           finish(n);
           sel = -1;
           adj = 0;
-          root.child("game").set(n);
+          G().set(n);
           return;
         } else if (a === "rr") {
-          if (g.rr > 0 && !g.rrPend && g.phase === "place")
-            root
-              .child("game")
-              .update({ rr: g.rr - 1, rrPend: { pilot: 1, copilot: 1 } });
+          if (g.rr > 0 && !g.rrPend && g.phase === "place") {
+            // only players who have rolled dice still behind their screen reroll
+            const rp = {};
+            ["pilot", "copilot"].forEach((r) => {
+              if (
+                g.rolled &&
+                g.rolled[r] &&
+                g.dice &&
+                g.dice[r] &&
+                g.dice[r].length
+              )
+                rp[r] = 1;
+            });
+            if (!rp[role]) return;
+            G().update({ rr: g.rr - 1, rrPend: rp });
+          }
           return;
         } else if (a === "rrgo") {
-          const d = (g.dice[role] || []).slice();
+          const d = ((g.dice && g.dice[role]) || []).slice();
           rsel.forEach((i) => (d[i] = rd(6)));
-          root.child("game/dice/" + role).set(d);
-          root.child("game/rrPend/" + role).remove();
+          G()
+            .child("dice/" + role)
+            .set(d);
+          G()
+            .child("rrPend/" + role)
+            .remove();
           rsel = [];
           return;
         } else if (a === "rrkeep") {
-          root.child("game/rrPend/" + role).remove();
+          G()
+            .child("rrPend/" + role)
+            .remove();
           return;
         } else if (a === "newgame") {
-          root.update({ game: null, picker: oth(D.picker || "Graeme") });
+          G().remove();
           sel = -1;
           adj = 0;
           return;
@@ -743,28 +855,13 @@
         if (b && !b.disabled) act(b.dataset.act, b.dataset.v);
       });
       $("sw").dataset.act = "sw";
+      $("vw").dataset.act = "back";
       root.on("value", (s) => {
         D = s.val() || {};
-        const g = D.game;
-        if (me && g) {
-          if (
-            g.phase === "discuss" &&
-            me === g.pilot &&
-            g.dice &&
-            g.dice.pilot &&
-            g.dice.copilot
-          ) {
-            const first = g.round % 2 ? "pilot" : "copilot";
-            root.child("game").update({
-              phase: "place",
-              turn: first,
-              msg: "Dice rolled. " + g[first] + " goes first.",
-            });
-          }
-          if (sel >= 0 && !((g.dice && g.dice[roleOf(g)]) || [])[sel]) {
-            sel = -1;
-            adj = 0;
-          }
+        const g = curGame();
+        if (g && sel >= 0 && !((g.dice && g.dice[roleOf(g)]) || [])[sel]) {
+          sel = -1;
+          adj = 0;
         }
         render();
       });
