@@ -551,7 +551,7 @@
         $("sw").hidden = !me;
         $("sw").textContent = "Playing as " + me + " ✎";
         if (!me) {
-          m.innerHTML = `<h1>SKY TEeAM</h1><div class="panel"><h2>Who's playing on this phone?</h2>${PL.map((n) => `<button class="btn" data-act="who" data-v="${n}">I'm ${n}</button>`).join("")}</div>`;
+          m.innerHTML = `<h1>SKY TEAM</h1><div class="panel"><h2>Who's playing on this phone?</h2>${PL.map((n) => `<button class="btn" data-act="who" data-v="${n}">I'm ${n}</button>`).join("")}</div>`;
           return;
         }
         D.game ? game(m, D.game) : lobby(m);
