@@ -318,6 +318,29 @@
           transform: translateY(36px);
         }
       }
+      /* Sky Team button */
+      .menu-btn.sky {
+        background: rgba(70, 150, 210, 0.85);
+        justify-content: center;
+      }
+      .sky-icon {
+        width: 140px;
+        height: 140px;
+        object-fit: contain;
+        flex-shrink: 0;
+        margin-left: -8px;
+        -webkit-user-drag: none;
+      }
+      .sky-title {
+        flex: 1;
+        text-align: center;
+        font-size: 2.4rem;
+        font-weight: 900;
+        text-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+      }
+      .ready .menu-btn.sky {
+        animation-delay: 0.65s;
+      }
       /* ---------- Loading screen ---------- */
       .loader {
         position: fixed;
@@ -432,7 +455,10 @@
           ><span class="g">D</span><span class="y">L</span><span>E</span>
         </div>
       </a>
-
+      <a class="menu-btn sky" href="sky.html">
+        <img class="sky-icon" src="sky.png" alt="" />
+        <div class="sky-title">Sky Team</div>
+      </a>
       <a class="menu-btn battle" href="battleships.html">
         <img class="cannon" src="cannon.png" alt="" />
         <div class="battle-title">Battleships</div>

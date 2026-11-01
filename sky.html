@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Sky Team</title>
+    <link rel="apple-touch-icon" href="sky.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Sky Team" />
+    <meta name="theme-color" content="#0d2238" />
+    <style>
+      :root {
+        --blue: #2f6fcf;
+        --org: #e8892b;
+        --ink: #eef4fb;
+        --card: rgba(10, 28, 46, 0.82);
+        --line: rgba(255, 255, 255, 0.25);
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #0d2238;
+        color: var(--ink);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "SF Pro Rounded", system-ui,
+          sans-serif;
+        touch-action: manipulation;
+      }
+      .bg {
+        position: fixed;
+        inset: 0;
+        background:
+          url("skyback.png") center/cover no-repeat,
+          linear-gradient(#17406b, #0d2238);
+      }
+      .bg::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          rgba(5, 15, 30, 0.55),
+          rgba(5, 15, 30, 0.35) 40%,
+          rgba(5, 15, 30, 0.7)
+        );
+      }
+      #app {
+        position: relative;
+        z-index: 1;
+        max-width: 460px;
+        margin: 0 auto;
+        padding: calc(env(safe-area-inset-top) + 10px) 12px
+          calc(env(safe-area-inset-bottom) + 24px);
+      }
+      .top {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 0.85rem;
+      }
+      .top a,
+      .top button {
+        color: var(--ink);
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font: inherit;
+        text-decoration: none;
+      }
+      h1 {
+        margin: 4px 0 12px;
+        text-align: center;
+        font-size: 2rem;
+        font-weight: 900;
+        letter-spacing: 1px;
+        text-shadow: 0 3px 12px rgba(0, 0, 0, 0.7);
+      }
+      h2 {
+        margin: 0 0 8px;
+        font-size: 1.1rem;
+      }
+      p {
+        margin: 0 0 10px;
+        line-height: 1.35;
+      }
+      .c {
+        text-align: center;
+      }
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 12px;
+        margin-bottom: 10px;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+      .btn {
+        display: block;
+        width: 100%;
+        padding: 14px;
+        margin-top: 10px;
+        font: inherit;
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #06182b;
+        background: linear-gradient(#ffe9a8, #f0b84a);
+        border: 0;
+        border-radius: 14px;
+        box-shadow: 0 4px 0 #8a6414;
+      }
+      .btn:active {
+        transform: translateY(3px);
+        box-shadow: 0 1px 0 #8a6414;
+      }
+      .btn.sec,
+      .mini {
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.12);
+        box-shadow: none;
+        border: 1px solid var(--line);
+      }
+      .mini {
+        font: inherit;
+        font-weight: 800;
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-size: 1rem;
+      }
+      .lnk {
+        display: block;
+        margin: 14px auto 0;
+        background: none;
+        border: 0;
+        color: var(--ink);
+        opacity: 0.7;
+        text-decoration: underline;
+        font: inherit;
+        font-size: 0.8rem;
+      }
+      .ap {
+        position: relative;
+        overflow: hidden;
+        display: block;
+        width: 100%;
+        text-align: left;
+        margin-bottom: 10px;
+        padding: 18px 16px;
+        min-height: 96px;
+        font: inherit;
+        color: var(--ink);
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+      }
+      .ap:disabled {
+        opacity: 1;
+        color: var(--ink);
+      }
+      .ap b {
+        display: block;
+        font-size: 1.35rem;
+        margin-bottom: 4px;
+      }
+      .ap small {
+        display: block;
+        opacity: 0.8;
+      }
+      .ban {
+        position: absolute;
+        right: -38px;
+        top: 16px;
+        width: 170px;
+        text-align: center;
+        transform: rotate(30deg);
+        background: #d71920;
+        color: #fff;
+        font-style: normal;
+        font-weight: 900;
+        padding: 4px 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+      }
+      .info {
+        display: flex;
+        justify-content: space-between;
+        font-weight: 800;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+      }
+      .trk {
+        display: flex;
+        gap: 3px;
+        margin-bottom: 8px;
+      }
+      .trk div {
+        flex: 1;
+        min-width: 0;
+        text-align: center;
+        padding: 4px 0;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        font-size: 0.7rem;
+        line-height: 1.25;
+      }
+      .trk .cur {
+        background: #f0b84a;
+        color: #06182b;
+        font-weight: 800;
+      }
+      .trk b {
+        display: block;
+        font-size: 0.8rem;
+      }
+      .stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 14px;
+        font-size: 0.82rem;
+        margin-bottom: 8px;
+      }
+      .ax {
+        display: flex;
+        gap: 2px;
+      }
+      .ax i {
+        width: 18px;
+        height: 14px;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.18);
+      }
+      .ax i.x {
+        background: rgba(215, 25, 32, 0.55);
+      }
+      .ax i.on {
+        background: #fff;
+        outline: 2px solid #f0b84a;
+      }
+      #msg {
+        text-align: center;
+        font-weight: 800;
+        margin: 6px 0 10px;
+        min-height: 2.6em;
+      }
+      .cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .cols h3 {
+        margin: 0 0 6px;
+        font-size: 0.85rem;
+        text-align: center;
+      }
+      .sp {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        margin-bottom: 5px;
+        min-height: 46px;
+        font: inherit;
+        font-size: 1.15rem;
+        font-weight: 900;
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.08);
+        border: 2px dashed var(--line);
+        border-radius: 10px;
+      }
+      .sp small {
+        font-size: 0.65rem;
+        font-weight: 600;
+        opacity: 0.8;
+      }
+      .sp.P {
+        border-color: var(--blue);
+      }
+      .sp.C {
+        border-color: var(--org);
+      }
+      .sp.K {
+        border-color: #bbb;
+      }
+      .sp.full.P {
+        background: var(--blue);
+        border-style: solid;
+      }
+      .sp.full.C {
+        background: var(--org);
+        border-style: solid;
+      }
+      .sp.full.K {
+        background: #8a8f99;
+        border-style: solid;
+      }
+      .sp.dep {
+        box-shadow: inset 0 0 0 2px #4ade80;
+      }
+      .sp.ok {
+        background: rgba(255, 255, 255, 0.28);
+        animation: pl 1s infinite alternate;
+      }
+      @keyframes pl {
+        to {
+          transform: scale(1.04);
+        }
+      }
+      .kr {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 6px;
+      }
+      .dice {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin: 8px 0;
+      }
+      .die {
+        width: 58px;
+        height: 58px;
+        font: inherit;
+        font-size: 1.8rem;
+        font-weight: 900;
+        color: #fff;
+        border: 3px solid transparent;
+        border-radius: 12px;
+        background: var(--blue);
+      }
+      .die.C {
+        background: var(--org);
+      }
+      .die.sel {
+        border-color: #fff;
+        transform: translateY(-6px);
+      }
+      .die.rs {
+        border-color: #ff5c5c;
+        transform: translateY(-6px);
+      }
+      .adj {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        font-weight: 800;
+      }
+      .res {
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: 900;
+        margin-bottom: 6px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .sp.ok {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg"></div>
+    <div id="app">
+      <div class="top">
+        <a href="index.html">← Menu</a><button id="sw" hidden></button>
+      </div>
+      <div id="main"></div>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script>
+      firebase.initializeApp({
+        apiKey: "AIzaSyDx__LsbF99d1mcst4rQMzxySn7IxTH-Co",
+        authDomain: "stephen-d1376.firebaseapp.com",
+        databaseURL:
+          "https://stephen-d1376-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "stephen-d1376",
+        appId: "1:593459222936:web:445c5ea1fccd03e67733ed",
+      });
+      const root = firebase.database().ref("skyteam");
+      const $ = (id) => document.getElementById(id);
+      const PL = ["Graeme", "Stephen"];
+      const oth = (n) => (n === "Graeme" ? "Stephen" : "Graeme");
+      const ALT = [6000, 5000, 4000, 3000, 2000, 1000, 0];
+      // base = planes per space (R1..RN, last space = airport); dice = spaces holding a traffic die
+      const AIR = {
+        montreal: {
+          name: "Montréal-Trudeau",
+          code: "YUL",
+          base: [0, 0, 1, 2, 1, 3, 2],
+          dice: [],
+        },
+        heathrow: {
+          name: "London Heathrow",
+          code: "LHR",
+          base: [0, 1, 1, 2, 2, 2],
+          dice: [1, 3, 5],
+        },
+        gardermoen: {
+          name: "Oslo Gardermoen",
+          code: "OSL",
+          base: [0, 0, 1, 0, 1, 1, 1, 0],
+          dice: [1, 1, 4],
+        },
+      };
+      const SP = [
+        { id: "Pr", r: "P", t: "radio", l: "Radio" },
+        { id: "Pa", r: "P", t: "axis", l: "Axis" },
+        { id: "Pe", r: "P", t: "eng", l: "Engines" },
+        { id: "G0", r: "P", t: "gear", n: 0, ok: [1, 2], l: "Gear" },
+        { id: "G1", r: "P", t: "gear", n: 1, ok: [3, 4], l: "Gear" },
+        { id: "G2", r: "P", t: "gear", n: 2, ok: [5, 6], l: "Gear" },
+        { id: "B0", r: "P", t: "brk", n: 0, ok: [2], l: "Brake" },
+        { id: "B1", r: "P", t: "brk", n: 1, ok: [4], l: "Brake" },
+        { id: "B2", r: "P", t: "brk", n: 2, ok: [6], l: "Brake" },
+        { id: "Cr0", r: "C", t: "radio", l: "Radio" },
+        { id: "Cr1", r: "C", t: "radio", l: "Radio" },
+        { id: "Ca", r: "C", t: "axis", l: "Axis" },
+        { id: "Ce", r: "C", t: "eng", l: "Engines" },
+        { id: "F0", r: "C", t: "flap", n: 0, ok: [1, 2], l: "Flaps" },
+        { id: "F1", r: "C", t: "flap", n: 1, ok: [2, 3], l: "Flaps" },
+        { id: "F2", r: "C", t: "flap", n: 2, ok: [4, 5], l: "Flaps" },
+        { id: "F3", r: "C", t: "flap", n: 3, ok: [5, 6], l: "Flaps" },
+        { id: "K0", r: "K", t: "cof", l: "Coffee" },
+        { id: "K1", r: "K", t: "cof", l: "Coffee" },
+        { id: "K2", r: "K", t: "cof", l: "Coffee" },
+      ];
+      let me = localStorage.getItem("sky_me"),
+        D = {},
+        pickA = null,
+        sel = -1,
+        adj = 0,
+        rsel = [];
+      const cnt = (a) => (a || []).reduce((x, y) => x + (y ? 1 : 0), 0);
+      const blue = (g) => 4.5 + cnt(g.gear),
+        orange = (g) => 8.5 + cnt(g.flap),
+        brake = (g) => 2 + cnt(g.brk);
+      const rd = (n) => 1 + Math.floor(Math.random() * n);
+      const roleOf = (g) => (me === g.pilot ? "pilot" : "copilot");
+
+      function allowed(g, role, s, v) {
+        if (s.r !== "K" && s.r !== (role === "pilot" ? "P" : "C")) return false;
+        if (g.placed && g.placed[s.id]) return false;
+        if (s.ok && !s.ok.includes(v)) return false;
+        if ((s.t === "flap" || s.t === "brk") && s.n > 0 && !g[s.t][s.n - 1])
+          return false;
+        return true;
+      }
+      function lose(g, why) {
+        g.over = { w: 0, m: why };
+        g.phase = "over";
+      }
+      function place(g, role, s, v) {
+        g.placed = g.placed || {};
+        g.placed[s.id] = { r: role, v: v };
+        const N = g.planes.length,
+          pl = g.placed;
+        let m = g[role] + " placed " + v + " on " + s.l + ". ";
+        if (s.t === "radio") {
+          const i = g.pos + v - 1;
+          if (i <= N && g.planes[i - 1] > 0) {
+            g.planes[i - 1]--;
+            m += "Plane cleared at R" + i + ".";
+          }
+        } else if (s.t === "axis" && pl.Pa && pl.Ca) {
+          g.axis += pl.Pa.v - pl.Ca.v;
+          m += "Axis is now " + g.axis + ".";
+          if (Math.abs(g.axis) >= 3) lose(g, "The plane went into a spin!");
+        } else if (s.t === "eng" && pl.Pe && pl.Ce) {
+          g.speed = pl.Pe.v + pl.Ce.v;
+          m += "Speed " + g.speed + ". ";
+          if (!(g.alt === 6 && g.pos === N)) {
+            const a = g.speed < blue(g) ? 0 : g.speed > orange(g) ? 2 : 1;
+            if (a) {
+              if (g.pos + a > N) lose(g, "You overshot the airport!");
+              else if (g.planes[g.pos - 1] > 0)
+                lose(g, "Collision with another plane!");
+              else g.pos += a;
+            }
+            m += "Advance " + a + ".";
+          }
+        } else if (s.t === "gear" || s.t === "flap" || s.t === "brk")
+          g[s.t][s.n] = 1;
+        else if (s.t === "cof" && g.coffee < 3) g.coffee++;
+        g.msg = m;
+      }
+      function finish(g) {
+        if (g.over) return;
+        if (Object.keys(g.placed).length < 8) {
+          g.turn = g.turn === "pilot" ? "copilot" : "pilot";
+          return;
+        }
+        const p = g.placed,
+          N = g.planes.length;
+        if (!(p.Pa && p.Ca && p.Pe && p.Ce))
+          return lose(g, "Axis and Engines both need a die from each pilot!");
+        if (g.alt === 6) {
+          const bad = [];
+          if (g.planes.some((x) => x > 0)) bad.push("planes left on the track");
+          if (cnt(g.gear) < 3 || cnt(g.flap) < 4)
+            bad.push("gear or flaps not all out");
+          if (g.axis) bad.push("plane not level");
+          if (g.speed >= brake(g)) bad.push("too fast for the brakes");
+          if (bad.length)
+            return lose(g, "Landing failed: " + bad.join(", ") + ".");
+          g.over = {
+            w: 1,
+            m: "Smooth landing! The passengers burst into applause!",
+          };
+          g.phase = "over";
+          root.child("wins/" + g.airport + "/" + g.pilot).set(true);
+          return;
+        }
+        g.alt++;
+        if (g.alt === 6 && g.pos < N)
+          return lose(g, "Crash landed before reaching the airport!");
+        if (g.alt === 4) g.rr++;
+        g.round++;
+        delete g.placed;
+        delete g.dice;
+        g.phase = "discuss";
+        g.msg =
+          g.alt === 6
+            ? "Final approach! Discuss, then roll."
+            : g.pos === N
+              ? "Holding over the airport. Slow down, then roll."
+              : "Round " + g.round + ". Discuss, then roll.";
+      }
+
+      function render() {
+        const m = $("main");
+        $("sw").hidden = !me;
+        $("sw").textContent = "Playing as " + me + " ✎";
+        if (!me) {
+          m.innerHTML = `<h1>SKY TEAM</h1><div class="panel"><h2>Who's playing on this phone?</h2>${PL.map((n) => `<button class="btn" data-act="who" data-v="${n}">I'm ${n}</button>`).join("")}</div>`;
+          return;
+        }
+        D.game ? game(m, D.game) : lobby(m);
+      }
+      function lobby(m) {
+        const pk = D.picker || "Graeme",
+          mine = pk === me;
+        if (mine && pickA) {
+          m.innerHTML = `<h1>SKY TEAM</h1><div class="panel"><h2>${AIR[pickA].name}</h2><p>Which job do you want?</p><button class="btn" data-act="role" data-v="pilot">I'll be the Pilot</button><button class="btn" data-act="role" data-v="copilot">I'll be the Co-Pilot</button><button class="btn sec" data-act="air" data-v="">Back</button></div>`;
+          return;
+        }
+        let h = `<h1>SKY TEAM</h1><p class="c">${mine ? "Your turn to choose the airport" : pk + " is choosing the airport…"}</p>`;
+        for (const k in AIR) {
+          const a = AIR[k],
+            w = (D.wins || {})[k] || {},
+            done = w.Graeme && w.Stephen;
+          h += `<button class="ap" ${mine ? "" : "disabled"} data-act="air" data-v="${k}">${done ? '<i class="ban">Completed</i>' : ""}<b>${a.name}</b><small>${a.code} · ${a.base.length} spaces${a.dice.length ? " · random traffic" : ""}</small><small>Won as Pilot: ${PL.filter((n) => w[n]).join(", ") || "none yet"}</small></button>`;
+        }
+        m.innerHTML =
+          h +
+          `<button class="lnk" data-act="resetdone">Reset completed airports</button>`;
+      }
+      function cell(g, s, v, ok) {
+        const pl = g.placed && g.placed[s.id],
+          dep = s.n !== undefined && g[s.t][s.n];
+        return `<button class="sp ${s.r} ${pl ? "full" : ""} ${ok && !pl && v && allowed(g, ok, s, v) ? "ok" : ""} ${dep ? "dep" : ""}" data-act="sp" data-v="${s.id}">${pl ? pl.v : s.ok ? s.ok.join("/") : ""}<small>${s.l}${dep ? " ✓" : ""}</small></button>`;
+      }
+      function game(m, g) {
+        const role = roleOf(g),
+          or = role === "pilot" ? "copilot" : "pilot",
+          N = g.planes.length,
+          A = AIR[g.airport];
+        const dice = (g.dice && g.dice[role]) || [],
+          od = (g.dice && g.dice[or]) || [];
+        const pend = g.rrPend && g.rrPend[role];
+        if (!pend) rsel = [];
+        const myTurn = g.phase === "place" && g.turn === role && !g.rrPend;
+        const v = myTurn && sel >= 0 && dice[sel] ? dice[sel] + adj : 0;
+        let h = `<div class="info"><span>${A.name}</span><span>Round ${Math.min(g.round, 7)}/7 · ${g.alt === 6 ? "Landing" : ALT[g.alt] + " ft"}</span></div>`;
+        h += `<div class="trk">${g.planes.map((n, i) => `<div class="${i + 1 === g.pos ? "cur" : ""}"><b>${i + 1 === N ? "🛬" : "R" + (i + 1)}</b>${n ? "✈".repeat(n) : "·"}</div>`).join("")}</div>`;
+        let ax = "";
+        for (let k = -3; k <= 3; k++)
+          ax += `<i class="${Math.abs(k) === 3 ? "x" : ""} ${k === g.axis ? "on" : ""}"></i>`;
+        h += `<div class="stats"><span>Speed 0 under ${blue(g)}, 2 over ${orange(g)}</span><span>Brake ${brake(g)}</span><span>☕ ${g.coffee}/3</span><span>🔄 ${g.rr}</span><span class="ax">${ax}</span></div>`;
+        h += `<div id="msg">${g.msg || ""}</div>`;
+        if (g.phase === "over") {
+          h += `<div class="panel"><div class="res">${g.over.w ? "🏆 You landed!" : "💥 Mission failed"}</div><p class="c">${g.over.m}</p><button class="btn" data-act="newgame">Back to airports</button></div>`;
+        } else if (g.phase === "discuss") {
+          h += `<div class="panel">${dice.length ? `<p class="c">Waiting for ${g[or]} to roll…</p>` : `<button class="btn" data-act="roll">Roll my dice</button>`}</div>`;
+        } else {
+          h += `<div class="cols"><div><h3>${g.pilot} · Pilot</h3>${SP.filter(
+            (s) => s.r === "P",
+          )
+            .map((s) => cell(g, s, v, myTurn && role))
+            .join("")}</div><div><h3>${g.copilot} · Co-Pilot</h3>${SP.filter(
+            (s) => s.r === "C",
+          )
+            .map((s) => cell(g, s, v, myTurn && role))
+            .join("")}</div></div>`;
+          h += `<div class="kr">${SP.filter((s) => s.r === "K")
+            .map((s) => cell(g, s, v, myTurn && role))
+            .join("")}</div>`;
+          h += `<div class="panel" style="margin-top:10px"><p class="c">${pend ? "Reroll: tap the dice to reroll" : g.rrPend ? "Waiting for " + g[or] + " to reroll…" : myTurn ? "Your turn: tap a die, then a space" : "Waiting for " + g[or] + " (" + od.length + " dice left)"}</p><div class="dice">${dice.map((d, i) => `<button class="die ${role === "copilot" ? "C" : ""} ${i === sel && !pend ? "sel" : ""} ${rsel.includes(i) ? "rs" : ""}" data-act="die" data-v="${i}">${d}</button>`).join("")}</div>`;
+          if (pend)
+            h += `<div class="adj"><button class="mini" data-act="rrgo">Reroll selected</button><button class="mini" data-act="rrkeep">Keep all</button></div>`;
+          else if (myTurn && sel >= 0 && dice[sel])
+            h += `<div class="adj"><button class="mini" data-act="adj" data-v="-1">−</button><span>Value ${v}${adj ? " (" + Math.abs(adj) + " ☕)" : ""}</span><button class="mini" data-act="adj" data-v="1">+</button></div>`;
+          if (g.rr > 0 && !g.rrPend)
+            h += `<button class="btn sec" data-act="rr">Use a Reroll token (${g.rr})</button>`;
+          h += `</div>`;
+        }
+        m.innerHTML = h;
+      }
+
+      function act(a, v) {
+        const g = D.game,
+          role = g && roleOf(g);
+        if (a === "who") {
+          me = v;
+          localStorage.setItem("sky_me", v);
+        } else if (a === "sw") {
+          localStorage.removeItem("sky_me");
+          me = null;
+        } else if (a === "air") pickA = v || null;
+        else if (a === "role") {
+          const pilot = v === "pilot" ? me : oth(me),
+            A = AIR[pickA],
+            pl = A.base.slice(),
+            N = pl.length,
+            rolls = [];
+          A.dice.forEach((k) => {
+            const i = Math.min(k + 1 + rd(4), N);
+            pl[i - 1]++;
+            rolls.push("R" + k + "→R" + i);
+          });
+          root
+            .child("game")
+            .set({
+              airport: pickA,
+              pilot: pilot,
+              copilot: oth(pilot),
+              round: 1,
+              pos: 1,
+              alt: 0,
+              planes: pl,
+              gear: [0, 0, 0],
+              flap: [0, 0, 0, 0],
+              brk: [0, 0, 0],
+              axis: 0,
+              coffee: 0,
+              rr: 1,
+              phase: "discuss",
+              speed: 0,
+              msg:
+                "Discuss your plan, then roll." +
+                (rolls.length
+                  ? " Traffic dice: " + rolls.join(", ") + "."
+                  : ""),
+            });
+          pickA = null;
+          return;
+        } else if (a === "roll") {
+          root.child("game/dice/" + role).set([rd(6), rd(6), rd(6), rd(6)]);
+          return;
+        } else if (a === "die") {
+          const i = +v;
+          if (g.rrPend && g.rrPend[role])
+            rsel = rsel.includes(i)
+              ? rsel.filter((x) => x !== i)
+              : rsel.concat(i);
+          else if (g.phase === "place" && g.turn === role && !g.rrPend) {
+            sel = sel === i ? -1 : i;
+            adj = 0;
+          }
+        } else if (a === "adj") {
+          const d = (g.dice[role] || [])[sel],
+            n = adj + +v;
+          if (d && d + n >= 1 && d + n <= 6 && Math.abs(n) <= g.coffee) adj = n;
+        } else if (a === "sp") {
+          if (
+            !(
+              g &&
+              g.phase === "place" &&
+              g.turn === role &&
+              !g.rrPend &&
+              sel >= 0
+            )
+          )
+            return;
+          const d = (g.dice[role] || [])[sel],
+            s = SP.find((x) => x.id === v);
+          if (!d || !allowed(g, role, s, d + adj)) return;
+          const n = JSON.parse(JSON.stringify(g)),
+            val = d + adj;
+          n.dice[role].splice(sel, 1);
+          n.coffee -= Math.abs(adj);
+          place(n, role, s, val);
+          finish(n);
+          sel = -1;
+          adj = 0;
+          root.child("game").set(n);
+          return;
+        } else if (a === "rr") {
+          if (g.rr > 0 && !g.rrPend && g.phase === "place")
+            root
+              .child("game")
+              .update({ rr: g.rr - 1, rrPend: { pilot: 1, copilot: 1 } });
+          return;
+        } else if (a === "rrgo") {
+          const d = (g.dice[role] || []).slice();
+          rsel.forEach((i) => (d[i] = rd(6)));
+          root.child("game/dice/" + role).set(d);
+          root.child("game/rrPend/" + role).remove();
+          rsel = [];
+          return;
+        } else if (a === "rrkeep") {
+          root.child("game/rrPend/" + role).remove();
+          return;
+        } else if (a === "newgame") {
+          root.update({ game: null, picker: oth(D.picker || "Graeme") });
+          sel = -1;
+          adj = 0;
+          return;
+        } else if (a === "resetdone") {
+          if (confirm("Clear all Completed banners?"))
+            root.child("wins").remove();
+          return;
+        }
+        render();
+      }
+      $("app").addEventListener("click", (e) => {
+        const b = e.target.closest("[data-act]");
+        if (b && !b.disabled) act(b.dataset.act, b.dataset.v);
+      });
+      $("sw").dataset.act = "sw";
+      root.on("value", (s) => {
+        D = s.val() || {};
+        const g = D.game;
+        if (me && g) {
+          if (
+            g.phase === "discuss" &&
+            me === g.pilot &&
+            g.dice &&
+            g.dice.pilot &&
+            g.dice.copilot
+          ) {
+            const first = g.round % 2 ? "pilot" : "copilot";
+            root
+              .child("game")
+              .update({
+                phase: "place",
+                turn: first,
+                msg: "Dice rolled. " + g[first] + " goes first.",
+              });
+          }
+          if (sel >= 0 && !((g.dice && g.dice[roleOf(g)]) || [])[sel]) {
+            sel = -1;
+            adj = 0;
+          }
+        }
+        render();
+      });
+      render();
+    </script>
+  </body>
+</html>
