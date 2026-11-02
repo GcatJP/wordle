@@ -240,8 +240,10 @@
       .stats {
         display: flex;
         flex-wrap: wrap;
+        justify-content: center;
         gap: 6px 14px;
-        font-size: 0.82rem;
+        font-size: 1rem;
+        font-weight: 800;
         margin-bottom: 8px;
       }
       .ax {
@@ -668,7 +670,7 @@
         let ax = "";
         for (let k = -3; k <= 3; k++)
           ax += `<i class="${Math.abs(k) === 3 ? "x" : ""} ${k === g.axis ? "on" : ""}"></i>`;
-        h += `<div class="stats"><span>Speed 0 under ${blue(g)}, 2 over ${orange(g)}</span><span>Brake ${brake(g)}</span><span>☕ ${g.coffee}/3</span><span>🔄 ${g.rr}</span><span class="ax">${ax}</span></div>`;
+        h += `<div class="stats"><span>Speed ${Math.ceil(blue(g))}-${Math.floor(orange(g))}</span><span>🔄 ${g.rr}</span><span class="ax">${ax}</span></div>`;
         h += `<div id="msg">${g.msg || ""}</div>`;
         if (g.phase === "over") {
           h += `<div class="panel"><div class="res">${g.over.w ? "🏆 You landed!" : "💥 Mission failed"}</div><p class="c">${g.over.m}</p><button class="btn" data-act="newgame">Choose a new airport</button></div>`;
@@ -689,11 +691,8 @@
           if (pend) status = "Reroll: tap the dice to reroll";
           else if (g.rrPend) status = "Waiting for " + g[or] + " to reroll…";
           else if (!rolledMe)
-            status =
-              g.turn === role
-                ? "You go first this round. Roll when you're ready."
-                : "You can roll your dice any time.";
-          else if (myTurn) status = "Your turn: tap a die, then a space";
+            status = g.turn === role ? "You're first!" : "Roll";
+          else if (myTurn) status = "Your turn";
           else
             status = rolled[or]
               ? "Waiting for " + g[or] + " (" + od.length + " dice left)"
