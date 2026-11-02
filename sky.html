@@ -183,6 +183,15 @@
         display: block;
         opacity: 0.8;
       }
+      .role {
+        min-height: 130px;
+      }
+      .role b {
+        font-size: 1.9rem;
+      }
+      .role small {
+        font-size: 1.15rem;
+      }
       .ban {
         position: absolute;
         right: -38px;
@@ -202,7 +211,7 @@
         justify-content: space-between;
         font-weight: 800;
         margin-bottom: 8px;
-        font-size: 0.95rem;
+        font-size: 1.25rem;
       }
       .trk {
         display: flex;
@@ -237,12 +246,14 @@
       }
       .ax {
         display: flex;
-        gap: 2px;
+        gap: 4px;
+        width: 100%;
+        justify-content: center;
       }
       .ax i {
-        width: 18px;
-        height: 14px;
-        border-radius: 3px;
+        width: 30px;
+        height: 22px;
+        border-radius: 4px;
         background: rgba(255, 255, 255, 0.18);
       }
       .ax i.x {
@@ -255,8 +266,10 @@
       #msg {
         text-align: center;
         font-weight: 800;
-        margin: 6px 0 10px;
-        min-height: 2.6em;
+        margin: 4px 0 8px;
+      }
+      #msg:empty {
+        display: none;
       }
       .cols {
         display: grid;
@@ -281,7 +294,7 @@
         font-size: 1.15rem;
         font-weight: 900;
         color: var(--ink);
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(120, 120, 120, 0.45);
         border: 2px dashed var(--line);
         border-radius: 10px;
       }
@@ -323,7 +336,7 @@
         box-shadow: inset 0 0 0 2px #4ade80;
       }
       .sp.ok {
-        background: rgba(255, 255, 255, 0.28);
+        background: rgba(255, 255, 255, 0.5);
         animation: pl 1s infinite alternate;
       }
       @keyframes pl {
@@ -627,7 +640,7 @@
               Math.min(g.round, 7) +
               "/7" +
               (g.phase === "place" && g.turn === r ? " · ⏳ your turn" : "");
-          return `<button class="ap" data-act="view" data-v="${r}"><b>${r === "pilot" ? "✈ " : "🧑‍✈️ "}Play as ${you}</b><small>${s}</small><small>${o} is the ${mate}</small></button>`;
+          return `<button class="ap role" data-act="view" data-v="${r}"><b>${r === "pilot" ? "✈ " : "🧑‍✈️ "}Play as ${you}</b><small>${s}</small><small>${o} is the ${mate}</small></button>`;
         };
         m.innerHTML = `<h1>SKY TEAM</h1><p class="c">${AIR[ap].name}</p><p class="c">Which game do you want to play?</p>${card("pilot")}${card("copilot")}`;
       }
