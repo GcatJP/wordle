@@ -18,6 +18,7 @@
     />
     <meta name="apple-mobile-web-app-title" content="Games" />
     <meta name="theme-color" content="#121213" />
+    <link rel="manifest" href="manifest.json" />
 
     <style>
       * {
@@ -481,6 +482,26 @@
         opacity: 0;
         transition: opacity 0.25s ease;
       }
+      .notif-wrap {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: calc(env(safe-area-inset-bottom) + 12px);
+        z-index: 2;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+      }
+      .notif-wrap button {
+        font: inherit;
+        font-weight: 800;
+        font-size: 0.95rem;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.6);
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        border-radius: 14px;
+        padding: 10px 16px;
+      }
     </style>
   </head>
   <body>
@@ -515,8 +536,15 @@
         <span class="ball"></span>
       </a>
     </div>
+    <div class="notif-wrap">
+      <button id="notifBtn" style="display: none">
+        🔔 Turn on notifications
+      </button>
+      <button id="testBtn" style="display: none">Send test</button>
+    </div>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
     <script>
       // Show/hide the red turn badge on a game button
       function setBadge(game, on) {
@@ -618,6 +646,7 @@
               databaseURL:
                 "https://wordle-d7fab-default-rtdb.asia-southeast1.firebasedatabase.app",
               projectId: "wordle-d7fab",
+              messagingSenderId: "1048912631015",
               appId: "1:1048912631015:web:f389f317c49a4eeb89be42",
             },
             "wordleApp",
@@ -664,6 +693,109 @@
       document.addEventListener("visibilitychange", function () {
         if (!document.hidden) refreshBadges();
       });
+      // ---------- Push notifications ----------
+      var VAPID_KEY =
+        "BETPcepBUad8jOhlmNqfHMa8oydUi3PddLsX1qs8W9kc9v15KZjZSXZ6xCkCIL8RSCpexCe1As8tLEFsV7AgX_U";
+      var notifBtn = document.getElementById("notifBtn");
+      var testBtn = document.getElementById("testBtn");
+
+      function myName() {
+        var raw = ls("me") || ls("sky_me") || ls("bs_me");
+        if (!raw) return null;
+        raw = raw.toLowerCase();
+        return raw === "graeme"
+          ? "Graeme"
+          : raw === "stephen"
+            ? "Stephen"
+            : null;
+      }
+
+      function updateNotifBtn() {
+        var supported =
+          "Notification" in window && "serviceWorker" in navigator;
+        var on =
+          supported && Notification.permission === "granted" && ls("push_me");
+        notifBtn.style.display = on ? "none" : "block";
+        testBtn.style.display = on ? "block" : "none";
+      }
+
+      async function getMyToken() {
+        var reg = await navigator.serviceWorker.register(
+          "firebase-messaging-sw.js",
+        );
+        await navigator.serviceWorker.ready;
+        return wApp.messaging().getToken({
+          vapidKey: VAPID_KEY,
+          serviceWorkerRegistration: reg,
+        });
+      }
+
+      async function enableNotifications() {
+        try {
+          if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+            alert(
+              "Open this from the Home Screen app (iOS 16.4 or later) to turn on notifications.",
+            );
+            return;
+          }
+          var me = myName();
+          if (!me)
+            me = confirm("Are you Graeme?\nOK = Graeme, Cancel = Stephen")
+              ? "Graeme"
+              : "Stephen";
+          var perm = await Notification.requestPermission();
+          if (perm !== "granted") {
+            alert(
+              "Notifications were not allowed. You can change this in iPhone Settings.",
+            );
+            return;
+          }
+          var token = await getMyToken();
+          if (!token) throw new Error("No token received");
+          await wApp
+            .database()
+            .ref("pushTokens/" + me)
+            .set(token);
+          localStorage.setItem("push_me", me);
+          alert("Notifications are on for " + me + " ✅");
+          updateNotifBtn();
+        } catch (e) {
+          alert("Could not turn on notifications: " + e.message);
+        }
+      }
+
+      async function refreshToken() {
+        try {
+          var me = ls("push_me");
+          if (!me || Notification.permission !== "granted") return;
+          var t = await getMyToken();
+          if (t)
+            wApp
+              .database()
+              .ref("pushTokens/" + me)
+              .set(t);
+        } catch (e) {}
+      }
+
+      function sendTest() {
+        var me = ls("push_me");
+        if (!me) return;
+        var other = me === "Graeme" ? "Stephen" : "Graeme";
+        wApp
+          .database()
+          .ref("notify")
+          .push({
+            to: other,
+            title: "Test 🔔",
+            body: me + " sent you a test notification",
+          });
+        alert("Test sent to " + other);
+      }
+
+      notifBtn.addEventListener("click", enableNotifications);
+      testBtn.addEventListener("click", sendTest);
+      updateNotifBtn();
+      refreshToken();
     </script>
   </body>
 </html>

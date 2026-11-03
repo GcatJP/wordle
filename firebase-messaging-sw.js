@@ -1,5 +1,5 @@
-importScripts("https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js");
 firebase.initializeApp({
   apiKey: "AIzaSyBr_drU2L3wndWce7i2Pjtpepuwc_VnAzY",
   authDomain: "wordle-d7fab.firebaseapp.com",
@@ -10,7 +10,7 @@ firebase.initializeApp({
 firebase.messaging().onBackgroundMessage((p) => {
   self.registration.showNotification(p.data.title, {
     body: p.data.body,
-    icon: "wordle-icon.png",
+    icon: "homeicon.png",
   });
 });
 self.addEventListener("notificationclick", (e) => {
