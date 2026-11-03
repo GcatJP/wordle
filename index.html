@@ -353,6 +353,41 @@
       .ready .menu-btn.sky {
         animation-delay: 0.65s;
       }
+      /* ---------- Turn notification badge ---------- */
+      .menu-btn {
+        overflow: visible;
+      }
+
+      .badge {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        z-index: 5;
+        min-width: 30px;
+        height: 30px;
+        border-radius: 15px;
+        background: #ff3b30;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        font-weight: 900;
+        color: #fff;
+      }
+      .badge.show {
+        display: flex;
+        animation: badgePop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1);
+      }
+      @keyframes badgePop {
+        from {
+          transform: scale(0);
+        }
+        to {
+          transform: scale(1);
+        }
+      }
       /* ---------- Loading screen ---------- */
       .loader {
         position: fixed;
@@ -462,23 +497,33 @@
       <h1>I love<br />Stephen❤️</h1>
 
       <a class="menu-btn wordle" href="wordle.html">
+        <span class="badge" data-game="wordle"></span>
         <div class="word-tiles">
           <span class="g">W</span><span class="y">O</span><span>R</span
           ><span class="g">D</span><span class="y">L</span><span>E</span>
         </div>
       </a>
       <a class="menu-btn sky" href="sky.html">
+        <span class="badge" data-game="sky"></span>
         <img class="sky-icon" src="sky.png" alt="" />
         <div class="sky-title">Sky Team</div>
       </a>
       <a class="menu-btn battle" href="battleships.html">
+        <span class="badge" data-game="battleships"></span>
         <img class="cannon" src="cannon.png" alt="" />
         <div class="battle-title">Battleships</div>
         <span class="ball"></span>
       </a>
     </div>
-
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <script>
+      // Show/hide the red turn badge on a game button
+      function setBadge(game, on) {
+        var b = document.querySelector('.badge[data-game="' + game + '"]');
+        if (b) b.classList.toggle("show", !!on);
+      }
+      // Test in the browser console: setBadge("wordle", true)
       var loader = document.getElementById("loader");
       var start = Date.now();
       var MIN_LOAD = 1400; // show the loader at least this long (ms)
@@ -510,6 +555,114 @@
       // Fix state when coming back with the Back button (iOS page cache)
       window.addEventListener("pageshow", function (e) {
         if (e.persisted) document.body.classList.remove("leaving");
+      });
+
+      // ---------- Turn notification dots ----------
+      var snap = { wordle: null, sky: null, bs: null };
+
+      function ls(k) {
+        try {
+          return localStorage.getItem(k);
+        } catch (e) {
+          return null;
+        }
+      }
+
+      // Wordle: my turn to set a word, to guess, or to start the next round
+      function wordleTurn(G, me) {
+        if (!G || !me) return false;
+        var guesser = G.setter === "Graeme" ? "Stephen" : "Graeme";
+        if (G.status === "setting") return me === G.setter;
+        if (G.status === "guessing") return me === guesser;
+        if (G.status === "done") return me === guesser;
+        return false;
+      }
+
+      // Sky Team: any live game (Pilot or Co-Pilot) where it's my go,
+      // or where I've been asked to reroll
+      function skyTurn(games, me) {
+        if (!games || !me) return false;
+        return Object.keys(games).some(function (k) {
+          var g = games[k];
+          if (!g || g.phase !== "place") return false;
+          var role =
+            me === g.pilot ? "pilot" : me === g.copilot ? "copilot" : null;
+          if (!role) return false;
+          if (g.rrPend) return !!g.rrPend[role];
+          return g.turn === role;
+        });
+      }
+
+      // Battleships: opponent has placed their fleet and I haven't finished yet
+      function bsTurn(B, me) {
+        if (!B || !me) return false;
+        me = me.toLowerCase() === "graeme" ? "Graeme" : "stephen";
+        var opp = me === "Graeme" ? "stephen" : "Graeme";
+        var m = B[me] || {},
+          t = B[opp] || {};
+        return !m.done && !!t.ships;
+      }
+
+      function refreshBadges() {
+        setBadge("wordle", wordleTurn(snap.wordle, ls("me")));
+        setBadge("sky", skyTurn(snap.sky, ls("sky_me")));
+        setBadge("battleships", bsTurn(snap.bs, ls("bs_me")));
+      }
+
+      if (window.firebase) {
+        try {
+          var wApp = firebase.initializeApp(
+            {
+              apiKey: "AIzaSyBr_drU2L3wndWce7i2Pjtpepuwc_VnAzY",
+              authDomain: "wordle-d7fab.firebaseapp.com",
+              databaseURL:
+                "https://wordle-d7fab-default-rtdb.asia-southeast1.firebasedatabase.app",
+              projectId: "wordle-d7fab",
+              appId: "1:1048912631015:web:f389f317c49a4eeb89be42",
+            },
+            "wordleApp",
+          );
+
+          var bApp = firebase.initializeApp(
+            {
+              apiKey: "AIzaSyDx__LsbF99d1mcst4rQMzxySn7IxTH-Co",
+              authDomain: "stephen-d1376.firebaseapp.com",
+              databaseURL:
+                "https://stephen-d1376-default-rtdb.asia-southeast1.firebasedatabase.app",
+              projectId: "stephen-d1376",
+              appId: "1:593459222936:web:445c5ea1fccd03e67733ed",
+            },
+            "bsApp",
+          );
+
+          wApp
+            .database()
+            .ref("wordle")
+            .on("value", function (s) {
+              snap.wordle = s.val();
+              refreshBadges();
+            });
+          wApp
+            .database()
+            .ref("skyteam/games")
+            .on("value", function (s) {
+              snap.sky = s.val();
+              refreshBadges();
+            });
+          bApp
+            .database()
+            .ref("battleships")
+            .on("value", function (s) {
+              snap.bs = s.val();
+              refreshBadges();
+            });
+        } catch (e) {}
+      }
+
+      // Re-check when coming back from a game or switching back to the app
+      window.addEventListener("pageshow", refreshBadges);
+      document.addEventListener("visibilitychange", function () {
+        if (!document.hidden) refreshBadges();
       });
     </script>
   </body>

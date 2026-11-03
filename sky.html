@@ -233,6 +233,11 @@
         color: #06182b;
         font-weight: 800;
       }
+      .trk .nxt {
+        background: #8b1a1a;
+        color: #fff;
+        font-weight: 800;
+      }
       .trk b {
         display: block;
         font-size: 0.8rem;
@@ -280,7 +285,7 @@
       }
       .cols h3 {
         margin: 0 0 6px;
-        font-size: 0.85rem;
+        font-size: 1.15rem;
         text-align: center;
       }
       .sp {
@@ -519,7 +524,7 @@
           pl = g.placed;
         let m = g[role] + " placed " + v + " on " + s.l + ". ";
         if (s.t === "radio") {
-          const i = g.pos + v - 1;
+          const i = g.pos + (g.adv || 0) + v - 1;
           if (i <= N && g.planes[i - 1] > 0) {
             g.planes[i - 1]--;
             m += "Plane cleared at R" + i + ".";
@@ -537,9 +542,8 @@
               if (g.pos + a > N) lose(g, "You overshot the airport!");
               else if (g.planes[g.pos - 1] > 0)
                 lose(g, "Collision with another plane!");
-              else g.pos += a;
+              else g.adv = a;
             }
-            m += "Advance " + a + ".";
           }
         } else if (s.t === "gear" || s.t === "flap" || s.t === "brk")
           g[s.t][s.n] = 1;
@@ -556,6 +560,9 @@
           N = g.planes.length;
         if (!(p.Pa && p.Ca && p.Pe && p.Ce))
           return lose(g, "Axis and Engines both need a die from each pilot!");
+        g.pos += g.adv || 0;
+        delete g.adv;
+
         if (g.alt === 6) {
           const bad = [];
           if (g.planes.some((x) => x > 0)) bad.push("planes left on the track");
@@ -666,11 +673,11 @@
           g.phase === "place" && g.turn === role && !g.rrPend && rolledMe;
         const v = myTurn && sel >= 0 && dice[sel] ? dice[sel] + adj : 0;
         let h = `<div class="info"><span>${A.name}</span><span>Round ${Math.min(g.round, 7)}/7 · ${g.alt === 6 ? "Landing" : ALT[g.alt] + " ft"}</span></div>`;
-        h += `<div class="trk">${g.planes.map((n, i) => `<div class="${i + 1 === g.pos ? "cur" : ""}"><b>${i + 1 === N ? "🛬" : "R" + (i + 1)}</b>${n ? "✈".repeat(n) : "·"}</div>`).join("")}</div>`;
+        h += `<div class="trk">${g.planes.map((n, i) => `<div class="${i + 1 === g.pos ? "cur" : g.adv && i + 1 === g.pos + g.adv ? "nxt" : ""}"><b>${i + 1 === N ? "🛬" : "R" + (i + 1)}</b>${n ? "✈".repeat(n) : "·"}</div>`).join("")}</div>`;
         let ax = "";
         for (let k = -3; k <= 3; k++)
           ax += `<i class="${Math.abs(k) === 3 ? "x" : ""} ${k === g.axis ? "on" : ""}"></i>`;
-        h += `<div class="stats"><span>Speed ${Math.ceil(blue(g))}-${Math.floor(orange(g))}</span><span>🔄 ${g.rr}</span><span class="ax">${ax}</span></div>`;
+        h += `<div class="stats"><span>Speed ${Math.ceil(blue(g))}-${Math.floor(orange(g))}</span><span class="ax">${ax}</span></div>`;
         h += `<div id="msg">${g.msg || ""}</div>`;
         if (g.phase === "over") {
           h += `<div class="panel"><div class="res">${g.over.w ? "🏆 You landed!" : "💥 Mission failed"}</div><p class="c">${g.over.m}</p><button class="btn" data-act="newgame">Choose a new airport</button></div>`;
