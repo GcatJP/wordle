@@ -432,6 +432,14 @@
       const $ = (id) => document.getElementById(id);
       const PL = ["Graeme", "Stephen"];
       const oth = (n) => (n === "Graeme" ? "Stephen" : "Graeme");
+      function notify(to, body) {
+        try {
+          firebase
+            .database()
+            .ref("notify")
+            .push({ to: to, title: "Sky Team", body: body });
+        } catch (e) {}
+      }
       const ALT = [6000, 5000, 4000, 3000, 2000, 1000, 0];
       // base = planes per space (R1..RN, last space = airport); dice = spaces holding a traffic die
       const AIR = {
@@ -751,7 +759,22 @@
           msg: rolls.length ? "Traffic dice: " + rolls.join(", ") + "." : "",
         };
         // only create if this game doesn't already exist
-        G().transaction((cur) => (cur ? undefined : ng));
+        const joinAs = view === "pilot" ? "Co-Pilot" : "Pilot";
+        G().transaction(
+          (cur) => (cur ? undefined : ng),
+          (err, committed) => {
+            if (committed)
+              notify(
+                oth(me),
+                me +
+                  " started a game at " +
+                  A.name +
+                  ". Join as " +
+                  joinAs +
+                  "!",
+              );
+          },
+        );
       }
       function act(a, v) {
         const g = curGame(),
@@ -825,6 +848,31 @@
           sel = -1;
           adj = 0;
           G().set(n);
+          const orole = role === "pilot" ? "copilot" : "pilot";
+          if (n.phase === "over")
+            notify(
+              oth(me),
+              n.over.w
+                ? "🏆 " +
+                    me +
+                    " landed the plane at " +
+                    AIR[n.airport].name +
+                    "!"
+                : "💥 Mission failed at " +
+                    AIR[n.airport].name +
+                    ". " +
+                    n.over.m,
+            );
+          else if (n.round > g.round)
+            notify(
+              oth(me),
+              "Round " +
+                n.round +
+                " begins. " +
+                (n.turn === orole ? "You go first! ✈️" : "Roll your dice! 🎲"),
+            );
+          else if (n.turn === orole)
+            notify(oth(me), me + " has placed a die. Your turn! ✈️");
           return;
         } else if (a === "rr") {
           if (g.rr > 0 && !g.rrPend && g.phase === "place") {
@@ -842,6 +890,12 @@
             });
             if (!rp[role]) return;
             G().update({ rr: g.rr - 1, rrPend: rp });
+            const orr = role === "pilot" ? "copilot" : "pilot";
+            if (rp[orr])
+              notify(
+                oth(me),
+                me + " used a reroll token. Reroll your dice! 🎲",
+              );
           }
           return;
         } else if (a === "rrgo") {

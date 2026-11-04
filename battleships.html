@@ -555,6 +555,27 @@
       };
       firebase.initializeApp(firebaseConfig);
       var root = firebase.database().ref("battleships");
+      // Second connection, only used to send push notifications
+      var pushApp = firebase.initializeApp(
+        {
+          apiKey: "AIzaSyBr_drU2L3wndWce7i2Pjtpepuwc_VnAzY",
+          authDomain: "wordle-d7fab.firebaseapp.com",
+          databaseURL:
+            "https://wordle-d7fab-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "wordle-d7fab",
+          appId: "1:1048912631015:web:f389f317c49a4eeb89be42",
+        },
+        "pushApp",
+      );
+      function notifyOpp(title, body) {
+        try {
+          var to = opp === "Graeme" ? "Graeme" : "Stephen";
+          pushApp
+            .database()
+            .ref("notify")
+            .push({ to: to, title: title, body: body });
+        } catch (e) {}
+      }
 
       /* ---------- Constants ---------- */
       var FLEET = [
@@ -881,7 +902,14 @@
           return placed[f.id];
         });
         $("lockBtn").disabled = true;
+        var oppReady = !!(data[opp] && data[opp].ships);
         root.child(me).set({ ships: arr });
+        notifyOpp(
+          "⚓ Battleships",
+          oppReady
+            ? cap(me) + " has locked in their fleet. Game on, start firing!"
+            : cap(me) + " has deployed their fleet. Place yours!",
+        );
       });
 
       function renderPlacement() {
@@ -1012,7 +1040,17 @@
           root.child(me).update({ shots: shots });
           showMsg(msg);
           setTimeout(function () {
+            var oppDone = !!(data[opp] && data[opp].done);
             root.child(me).update({ done: true, tries: shots.length });
+            notifyOpp(
+              "⚓ Battleships",
+              oppDone
+                ? "Results are in! See who won."
+                : cap(me) +
+                    " sank your fleet in " +
+                    shots.length +
+                    " shots. Can you beat that?",
+            );
           }, 1800);
         } else {
           root.child(me).update({ shots: shots });
@@ -1107,6 +1145,10 @@
           stephen: null,
           counted: null,
         });
+        notifyOpp(
+          "⚓ Battleships",
+          cap(me) + " started a new game. Deploy your fleet!",
+        );
       });
       /* ---------- Go ---------- */
       if (me) {

@@ -379,9 +379,7 @@
       <button id="sw"></button>
     </header>
     <div id="msg"></div>
-    <button class="go" id="bell" hidden style="margin-bottom: 10px">
-      Turn on notifications
-    </button>
+
     <div id="board"></div>
     <div id="setbox" hidden>
       <input
@@ -423,7 +421,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+
     <script>
       // ===== PASTE YOUR FIREBASE CONFIG HERE =====
 
@@ -442,6 +440,14 @@
       const ref = firebase.database().ref("wordle");
       const $ = (id) => document.getElementById(id);
       const other = (p) => (p === "Graeme" ? "Stephen" : "Graeme");
+      function notify(to, body) {
+        try {
+          firebase
+            .database()
+            .ref("notify")
+            .push({ to: to, title: "Wordle", body: body });
+        } catch (e) {}
+      }
       let WORDS = null;
       fetch("words.txt", { cache: "no-store" })
         .then((r) => (r.ok ? r.text() : ""))
@@ -517,8 +523,7 @@
       function draw(G, recap) {
         $("pick").hidden = !!me;
         if (!me || !G) return;
-        $("bell").hidden =
-          !("Notification" in window) || Notification.permission === "granted";
+
         const gs = G.guesses || [],
           setter = G.setter,
           guesser = other(setter);
@@ -662,6 +667,16 @@
         cur = ["", "", "", "", ""];
         sel = 0;
         ref.update(upd);
+        if (over)
+          notify(
+            other(me),
+            win
+              ? me + " solved your word in " + gs.length + "/6 😬"
+              : me +
+                  " ran out of guesses. The word was " +
+                  G.word.toUpperCase() +
+                  " 🎉",
+          );
       }
 
       document.addEventListener("keydown", (e) => {
@@ -706,6 +721,7 @@
           guesses: null,
           result: null,
         });
+        notify(other(me), me + " has set a word. Your turn to guess! 🔤");
       };
       $("next").onclick = () =>
         ref.update({
@@ -731,45 +747,11 @@
         const t = $("noteIn").value.trim();
         if (t) {
           ref.update({ note: t, noteBy: me });
+          notify(other(me), me + " left you a note 💬");
           $("noteIn").value = "";
         }
       };
-      const VAPID_KEY =
-        "BETPcepBUad8jOhlmNqfHMa8oydUi3PddLsX1qs8W9kc9v15KZjZSXZ6xCkCIL8RSCpexCe1As8tLEFsV7AgX_U";
-      async function enableNotifs(silent) {
-        try {
-          const perm = await Notification.requestPermission();
-          if (perm !== "granted") {
-            if (!silent)
-              alert(
-                "Notifications are blocked. Turn them on in iPhone Settings, Notifications, Wordle.",
-              );
-            return;
-          }
-          const reg = await navigator.serviceWorker.register(
-            "firebase-messaging-sw.js",
-          );
-          const token = await firebase.messaging().getToken({
-            vapidKey: VAPID_KEY,
-            serviceWorkerRegistration: reg,
-          });
-          await firebase
-            .database()
-            .ref("tokens/" + me)
-            .set(token);
-          $("bell").hidden = true;
-          if (!silent) alert("Notifications are on");
-        } catch (e) {
-          if (!silent) alert("Couldn't turn on notifications: " + e.message);
-        }
-      }
-      $("bell").onclick = () => enableNotifs(false);
-      if (
-        me &&
-        "Notification" in window &&
-        Notification.permission === "granted"
-      )
-        enableNotifs(true);
+
       // ---------- sound & effects ----------
       ["touchend", "click"].forEach((e) =>
         document.addEventListener(e, () => {

@@ -482,25 +482,30 @@
         opacity: 0;
         transition: opacity 0.25s ease;
       }
-      .notif-wrap {
+      .notif-dot {
         position: fixed;
-        left: 0;
-        right: 0;
-        bottom: calc(env(safe-area-inset-bottom) + 12px);
+        top: calc(env(safe-area-inset-top) + 4px);
+        right: 4px;
         z-index: 2;
-        display: flex;
-        gap: 10px;
-        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        display: grid;
+        place-items: center;
       }
-      .notif-wrap button {
-        font: inherit;
-        font-weight: 800;
-        font-size: 0.95rem;
-        color: #fff;
-        background: rgba(0, 0, 0, 0.6);
-        border: 2px solid rgba(255, 255, 255, 0.35);
-        border-radius: 14px;
-        padding: 10px 16px;
+      .notif-dot::before {
+        content: "";
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #ff3b30;
+        border: 2px solid rgba(255, 255, 255, 0.85);
+        box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+      }
+      .notif-dot.on::before {
+        background: #34c759;
       }
     </style>
   </head>
@@ -536,12 +541,7 @@
         <span class="ball"></span>
       </a>
     </div>
-    <div class="notif-wrap">
-      <button id="notifBtn" style="display: none">
-        🔔 Turn on notifications
-      </button>
-      <button id="testBtn" style="display: none">Send test</button>
-    </div>
+    <button id="notifDot" class="notif-dot" aria-label="Notifications"></button>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
@@ -696,8 +696,7 @@
       // ---------- Push notifications ----------
       var VAPID_KEY =
         "BETPcepBUad8jOhlmNqfHMa8oydUi3PddLsX1qs8W9kc9v15KZjZSXZ6xCkCIL8RSCpexCe1As8tLEFsV7AgX_U";
-      var notifBtn = document.getElementById("notifBtn");
-      var testBtn = document.getElementById("testBtn");
+      var notifDot = document.getElementById("notifDot");
 
       function myName() {
         var raw = ls("me") || ls("sky_me") || ls("bs_me");
@@ -710,13 +709,23 @@
             : null;
       }
 
-      function updateNotifBtn() {
-        var supported =
-          "Notification" in window && "serviceWorker" in navigator;
-        var on =
-          supported && Notification.permission === "granted" && ls("push_me");
-        notifBtn.style.display = on ? "none" : "block";
-        testBtn.style.display = on ? "block" : "none";
+      function pushSupported() {
+        return "Notification" in window && "serviceWorker" in navigator;
+      }
+
+      function isOn() {
+        return (
+          pushSupported() &&
+          Notification.permission === "granted" &&
+          !!ls("push_me") &&
+          ls("push_on") !== "0"
+        );
+      }
+
+      function updateDot() {
+        var on = isOn();
+        notifDot.classList.toggle("on", on);
+        notifDot.title = on ? "Notifications on" : "Notifications off";
       }
 
       async function getMyToken() {
@@ -732,18 +741,25 @@
 
       async function enableNotifications() {
         try {
-          if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+          if (!pushSupported()) {
             alert(
               "Open this from the Home Screen app (iOS 16.4 or later) to turn on notifications.",
             );
             return;
           }
-          var me = myName();
+          var me = ls("push_me") || myName();
           if (!me)
             me = confirm("Are you Graeme?\nOK = Graeme, Cancel = Stephen")
               ? "Graeme"
               : "Stephen";
-          var perm = await Notification.requestPermission();
+          var perm = Notification.permission;
+          if (perm === "denied") {
+            alert(
+              "Notifications are blocked. Turn them on for this app in iPhone Settings > Notifications.",
+            );
+            return;
+          }
+          if (perm !== "granted") perm = await Notification.requestPermission();
           if (perm !== "granted") {
             alert(
               "Notifications were not allowed. You can change this in iPhone Settings.",
@@ -757,17 +773,35 @@
             .ref("pushTokens/" + me)
             .set(token);
           localStorage.setItem("push_me", me);
-          alert("Notifications are on for " + me + " ✅");
-          updateNotifBtn();
+          localStorage.setItem("push_on", "1");
+          updateDot();
         } catch (e) {
           alert("Could not turn on notifications: " + e.message);
         }
       }
 
+      async function disableNotifications() {
+        try {
+          var me = ls("push_me");
+          localStorage.setItem("push_on", "0");
+          if (me)
+            await wApp
+              .database()
+              .ref("pushTokens/" + me)
+              .remove();
+          try {
+            await wApp.messaging().deleteToken();
+          } catch (e) {}
+        } catch (e) {
+          alert("Could not turn off notifications: " + e.message);
+        }
+        updateDot();
+      }
+
       async function refreshToken() {
         try {
           var me = ls("push_me");
-          if (!me || Notification.permission !== "granted") return;
+          if (!isOn()) return;
           var t = await getMyToken();
           if (t)
             wApp
@@ -777,24 +811,11 @@
         } catch (e) {}
       }
 
-      function sendTest() {
-        var me = ls("push_me");
-        if (!me) return;
-        var other = me === "Graeme" ? "Stephen" : "Graeme";
-        wApp
-          .database()
-          .ref("notify")
-          .push({
-            to: other,
-            title: "Test 🔔",
-            body: me + " sent you a test notification",
-          });
-        alert("Test sent to " + other);
-      }
-
-      notifBtn.addEventListener("click", enableNotifications);
-      testBtn.addEventListener("click", sendTest);
-      updateNotifBtn();
+      notifDot.addEventListener("click", function () {
+        if (isOn()) disableNotifications();
+        else enableNotifications();
+      });
+      updateDot();
       refreshToken();
     </script>
   </body>
